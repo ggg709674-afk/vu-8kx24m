@@ -50,6 +50,12 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 .topnav button.on { background:rgba(138,162,255,0.14); color:#fff; font-weight:700; }
 .topnav button.on i, .topnav button.on svg { color:#8AA2FF; }
 .topbar .bar-right { margin-left:auto; display:flex; align-items:center; gap:14px; font-size:11.5px; color:#5C6377; white-space:nowrap; }
+.menu-btn { display:none; }
+#mob-drawer { display:none; position:fixed; top:52px; left:0; right:0; background:#1B2130; z-index:95; padding:8px 10px 12px; box-shadow:0 14px 30px rgba(15,18,28,0.4); border-top:1px solid rgba(255,255,255,0.07); }
+#mob-drawer.on { display:flex; flex-direction:column; gap:4px; }
+#mob-drawer button { font:inherit; font-size:14px; font-weight:600; color:#99A1B5; background:none; border:none; padding:13px 14px; border-radius:9px; cursor:pointer; display:flex; align-items:center; gap:10px; text-align:left; width:100%; }
+#mob-drawer button.on { background:rgba(138,162,255,0.14); color:#fff; font-weight:700; }
+#mob-drawer button.on i, #mob-drawer button.on svg { color:#8AA2FF; }
 .gear-btn { width:34px; height:34px; border-radius:9px; display:grid; place-items:center; background:rgba(255,255,255,0.07); border:none; color:#99A1B5; cursor:pointer; transition:background .13s, color .13s; }
 .gear-btn:hover { background:rgba(255,255,255,0.13); color:#fff; }
 .gear-btn i, .gear-btn svg { width:16px; height:16px; }
@@ -278,9 +284,8 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   .topbar .bar-right span { display:none; }
   .topbar .bar-right { gap:6px; }
   .gear-btn { width:31px; height:31px; }
-  .topnav { gap:2px; overflow-x:auto; scrollbar-width:none; }
-  .topnav::-webkit-scrollbar { display:none; }
-  .topnav button { padding:8px 10px; font-size:12.5px; gap:5px; white-space:nowrap; }
+  .topnav { display:none; }
+  .menu-btn { display:grid; }
   .sa-wrap { padding:14px 12px 32px; }
   .sa-title { font-size:19px; }
   .settings-modal { padding:16px 8px 8px; }
@@ -319,9 +324,10 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       <button class="on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> T유선 벨류업 · UIT</button>
       <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 단말 재고현황</button>
     </div>
-    <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
+    <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button><button class="gear-btn menu-btn" onclick="toggleDrawer()" title="메뉴"><i data-lucide="menu"></i></button></div>
   </div>
 </div>
+<div id="mob-drawer"></div>
 
 <div class="sa-wrap">
 
@@ -1408,6 +1414,20 @@ function showMainTab(t) {
   document.getElementById('ttab-stock').classList.toggle('on', t === 'stock');
   if (t === 'stock' && !_svLoaded) { _svLoaded = true; svLoad(); }
 }
+
+// 모바일 햄버거 드로어 — 열릴 때 PC 메뉴를 복제하므로 메뉴가 늘어나도 자동 반영
+function toggleDrawer(force) {
+  const d = document.getElementById('mob-drawer');
+  const open = force !== undefined ? force : !d.classList.contains('on');
+  if (open) { d.innerHTML = document.querySelector('.topnav').innerHTML; if (window.lucide) lucide.createIcons(); }
+  d.classList.toggle('on', open);
+}
+document.addEventListener('click', e => {
+  const d = document.getElementById('mob-drawer');
+  if (!d || !d.classList.contains('on')) return;
+  if (e.target.closest('#mob-drawer button')) { setTimeout(() => toggleDrawer(false), 80); return; }
+  if (!e.target.closest('#mob-drawer') && !e.target.closest('.menu-btn')) toggleDrawer(false);
+});
 
 // ===== 재고현황 — 재고금액 추이 (본체 Supabase anon 뷰, 재고금액추이.html과 동일 로직) =====
 const svLoad = (() => {
