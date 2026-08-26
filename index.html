@@ -1416,15 +1416,15 @@ const svLoad = (() => {
       const el = $v('sv-models');
       if (!el) return;
       const maxAmt = Math.max(1, ...rows.map(r => r.amt));
-      const TD = 'padding:10px 14px;border-bottom:1px solid var(--border-light);font-size:13.5px;white-space:nowrap;width:1%';
-      const TH = 'padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;white-space:nowrap;width:1%';
+      const TD = 'padding:10px 14px;border-bottom:1px solid var(--border-light);font-size:13.5px;white-space:nowrap';
+      const TH = 'padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;white-space:nowrap';
       el.innerHTML = `
         <thead><tr style="color:var(--text-hint)">
-          <th style="text-align:left;${TH}">모델</th>
-          <th style="text-align:right;${TH}">단가</th>
-          <th style="text-align:right;${TH}">수량</th>
-          <th style="text-align:right;${TH}">재고금액</th>
-          <th style="padding:9px 14px;border-bottom:1px solid var(--border)"></th>
+          <th style="text-align:left;${TH};width:20%">모델</th>
+          <th style="text-align:right;${TH};width:10%">단가</th>
+          <th style="text-align:right;${TH};width:8%">수량</th>
+          <th style="text-align:right;${TH};width:12%">재고금액</th>
+          <th style="padding:9px 14px;border-bottom:1px solid var(--border);width:50%"></th>
         </tr></thead>
         <tbody>${rows.map(r => `<tr>
           <td style="${TD};font-weight:700">${escM(r.m)}</td>
