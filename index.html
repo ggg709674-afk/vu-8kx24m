@@ -269,6 +269,31 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   .vu-divider { display:none; }
   .upload-grid { grid-template-columns:1fr; }
 }
+
+/* ── 모바일 반응형 (상단바·재고현황) ── */
+@media (max-width: 760px) {
+  .topbar-in { padding:0 12px; gap:10px; height:52px; }
+  .topbar .brand { font-size:13.5px; gap:7px; }
+  .topbar .brand .mark { width:26px; height:26px; }
+  .topbar .bar-right span { display:none; }
+  .topbar .bar-right { gap:6px; }
+  .gear-btn { width:31px; height:31px; }
+  .topnav { gap:2px; overflow-x:auto; scrollbar-width:none; }
+  .topnav::-webkit-scrollbar { display:none; }
+  .topnav button { padding:8px 10px; font-size:12.5px; gap:5px; white-space:nowrap; }
+  .sa-wrap { padding:14px 12px 32px; }
+  .sa-title { font-size:19px; }
+  .settings-modal { padding:16px 8px 8px; }
+  .settings-body { padding:14px 12px; }
+  .tabs { overflow-x:auto; scrollbar-width:none; }
+  .tabs .tab, .tab { white-space:nowrap; }
+  .vu-banner { padding:14px 16px; gap:10px; }
+  .vu-banner-head { border-right:none; padding-right:0; }
+  .vu-goals { gap:12px; }
+  #sv-hero { font-size:23px !important; }
+  #sv-models-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #sv-models { min-width:620px; }
+}
 </style>
 </head>
 <body>
@@ -472,7 +497,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
         <b style="font-size:18px;letter-spacing:-0.02em">모델별 재고</b>
         <span style="font-size:12.5px;color:var(--text-hint)">색상 구분 없음 · 모델관리 순서</span>
       </div>
-      <div>
+      <div id="sv-models-wrap">
         <table style="width:100%;border-collapse:collapse;font-size:12.5px" id="sv-models"></table>
       </div>
     </div>
