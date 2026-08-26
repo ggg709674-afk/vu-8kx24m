@@ -293,7 +293,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       <button class="on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> T유선 벨류업 · UIT</button>
       <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 단말 재고현황</button>
     </div>
-    <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button></div>
+    <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
   </div>
 </div>
 
@@ -1492,6 +1492,11 @@ const svLoad = (() => {
   } catch (e) { console.warn('업로드 데이터 복원 실패', e); }
 })();
 
+// 로그아웃 — 잠금 해제 기록 삭제 후 잠금 화면으로
+function vuLogout() {
+  try { localStorage.removeItem('vu_auth'); } catch (e) {}
+  location.reload();
+}
 // ── 간편 잠금 — 비밀번호는 아래 상수만 바꾸면 됨 (바꾸면 기존 접속자도 재입력) ──
 const VU_PASS = 'audwls09!!';
 (() => {
