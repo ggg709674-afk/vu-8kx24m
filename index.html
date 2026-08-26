@@ -466,6 +466,16 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       </div>
       <div id="sv-note" style="font-size:11.5px;color:var(--text-hint);margin-top:8px"></div>
     </div>
+
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px;margin-top:14px">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+        <b style="font-size:14.5px">모델별 재고</b>
+        <span style="font-size:11.5px;color:var(--text-hint)">색상 구분 없음 · 재고금액 순</span>
+      </div>
+      <div style="max-height:480px;overflow:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px" id="sv-models"></table>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -1392,6 +1402,32 @@ const svLoad = (() => {
     const cur = incRows.reduce((a, r) => a + (priceMap[r.model] || 0), 0);
     $v('sv-hero').textContent = fmtN(cur) + '원';
     $v('sv-hero-sub').textContent = eok(cur) + '원 · ' + incRows.length.toLocaleString() + '대';
+    // 모델별 재고 표 (색상 무시) — 총 재고금액과 동일 기준(재고/출고중/숨김/예약/훼손 × 모델 출고가)
+    (() => {
+      const escM = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      const byModel = {};
+      incRows.forEach(r => { const k = r.model || '(미지정)'; byModel[k] = (byModel[k] || 0) + 1; });
+      const rows = Object.entries(byModel).map(([m, q]) => ({ m, q, amt: q * (priceMap[m] || 0) })).sort((a, b) => b.amt - a.amt || b.q - a.q);
+      const el = $v('sv-models');
+      if (!el) return;
+      const TD = 'padding:6px 8px;border-bottom:1px solid var(--border-light)';
+      el.innerHTML = `
+        <thead><tr style="color:var(--text-hint);font-size:11px">
+          <th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--white)">모델</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--white)">수량</th>
+          <th style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--white)">재고금액</th>
+        </tr></thead>
+        <tbody>${rows.map(r => `<tr>
+          <td style="${TD};font-weight:600">${escM(r.m)}</td>
+          <td style="${TD};text-align:right;font-variant-numeric:tabular-nums">${r.q.toLocaleString()}대</td>
+          <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;${r.amt ? '' : 'color:var(--text-hint)'}">${r.amt ? fmtN(r.amt) + '원' : '단가없음'}</td>
+        </tr>`).join('')}</tbody>
+        <tfoot><tr style="font-weight:700">
+          <td style="padding:8px;border-top:1px solid var(--border)">합계 · ${rows.length}개 모델</td>
+          <td style="padding:8px;border-top:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums">${incRows.length.toLocaleString()}대</td>
+          <td style="padding:8px;border-top:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums">${fmtN(cur)}원</td>
+        </tr></tfoot>`;
+    })();
     let snapMap = {}, snapMiss = '';
     const { data: snaps, error: eS } = await sbv.from('inventory_value_daily').select('snap_date,amount').gte('snap_date', monthStart);
     if (eS) snapMiss = ' · 스냅샷 테이블 조회 실패'; else (snaps || []).forEach(s => snapMap[s.snap_date] = Number(s.amount));
