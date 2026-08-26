@@ -1455,14 +1455,14 @@ const svLoad = (() => {
       const narrowT = window.innerWidth < 480;
       if (narrowT) {
         // 모바일: 단가·막대 제외 — 모델/수량/재고금액 3열이 화면 꽉 차게
-        el.style.tableLayout = '';
-        const TDm = 'padding:10px 8px;border-bottom:1px solid var(--border-light);font-size:13.5px;white-space:nowrap';
+        el.style.tableLayout = 'fixed';
+        const TDm = 'padding:10px 8px;border-bottom:1px solid var(--border-light);font-size:13.5px;white-space:nowrap;overflow:hidden';
         const THm = 'padding:8px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600';
         el.innerHTML = `
           <thead><tr style="color:var(--text-hint)">
-            <th style="text-align:left;${THm}">모델</th>
-            <th style="text-align:right;${THm};width:1%">수량</th>
-            <th style="text-align:right;${THm};width:1%">재고금액</th>
+            <th style="text-align:left;${THm};width:40%">모델</th>
+            <th style="text-align:right;${THm};width:26%">수량</th>
+            <th style="text-align:right;${THm};width:34%">재고금액</th>
           </tr></thead>
           <tbody>${rows.map(r => `<tr>
             <td style="${TDm};font-weight:700">${escM(r.m)}</td>
