@@ -176,9 +176,9 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 /* ── 밸류업 배너 ── */
 .vu-banner {
   display:flex; align-items:stretch; gap:14px; flex-wrap:wrap;
-  background:linear-gradient(135deg,#4F8EF7 0%,#6366F1 60%,#8B5CF6 100%);
+  background:linear-gradient(135deg,#1F2E4D 0%,#2B3F66 55%,#4B6098 100%);
   border-radius:16px; padding:18px 22px; margin-bottom:18px;
-  box-shadow:0 4px 16px rgba(79,142,247,0.18);
+  box-shadow:0 4px 16px rgba(31,46,77,0.28);
   color:#fff; position:relative; overflow:hidden;
 }
 .vu-banner::before { content:''; position:absolute; right:-40px; top:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.08); pointer-events:none; }
@@ -189,6 +189,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 .vu-goals { display:flex; align-items:center; gap:18px; flex:1; flex-wrap:wrap; }
 .vu-goal { display:flex; align-items:center; gap:10px; padding:6px 0; min-width:0; }
 .vu-goal-icon { width:32px; height:32px; border-radius:9px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; backdrop-filter:blur(4px); }
+.vu-goal-icon i, .vu-goal-icon svg { width:16px; height:16px; }
 .vu-goal-body { display:flex; flex-direction:column; min-width:0; }
 .vu-goal-name { font-size:11.5px; font-weight:600; opacity:0.85; letter-spacing:-0.1px; white-space:nowrap; }
 .vu-goal-pct { font-size:22px; font-weight:900; letter-spacing:-0.8px; line-height:1.1; font-variant-numeric:tabular-nums; }
@@ -286,6 +287,8 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 
 <div class="sa-wrap">
 
+  <div id="main-sales">
+
   <!-- ── 헤더 ── -->
   <div class="sa-head">
     <div>
@@ -300,13 +303,13 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   <!-- ── 6월 벨류업 목표 배너 ── -->
   <div class="vu-banner">
     <div class="vu-banner-head">
-      <span class="vu-tag">🎯 8월 벨류업 목표</span>
+      <span class="vu-tag"><i data-lucide="target" style="width:12px;height:12px"></i> 8월 벨류업 목표</span>
       <div class="vu-banner-title">월간 KPI</div>
       <div class="vu-banner-sub">개통 기준 · 진행 현황은 아래 카드 참고</div>
     </div>
     <div class="vu-goals">
       <div class="vu-goal">
-        <div class="vu-goal-icon">⚡</div>
+        <div class="vu-goal-icon"><i data-lucide="zap"></i></div>
         <div class="vu-goal-body">
           <span class="vu-goal-name">초고속 500M 이상</span>
           <span class="vu-goal-pct">85<small>%</small></span>
@@ -314,7 +317,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       </div>
       <div class="vu-divider"></div>
       <div class="vu-goal">
-        <div class="vu-goal-icon">📺</div>
+        <div class="vu-goal-icon"><i data-lucide="tv"></i></div>
         <div class="vu-goal-body">
           <span class="vu-goal-name">TV 스탠다드 이상</span>
           <span class="vu-goal-pct">90<small>%</small></span>
@@ -322,7 +325,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       </div>
       <div class="vu-divider"></div>
       <div class="vu-goal">
-        <div class="vu-goal-icon">🎬</div>
+        <div class="vu-goal-icon"><i data-lucide="clapperboard"></i></div>
         <div class="vu-goal-body">
           <span class="vu-goal-name">TV ALL 이상</span>
           <span class="vu-goal-pct">30<small>%</small></span>
@@ -331,7 +334,6 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
     </div>
   </div>
 
-  <div id="main-sales">
   <!-- ── 업로드: 우측 상단 톱니바퀴 → 모달 (메인에는 미노출) ── -->
   <div class="settings-modal" id="settings-modal">
     <div class="settings-card">
@@ -1326,12 +1328,17 @@ document.addEventListener('mouseout', e => {
 TYPES.forEach(t => renderCurrent(t));
 renderUsim();
 lucide.createIcons();
-openSettings();   // 첫 진입 — 데이터가 없으므로 업로드 모달 자동 오픈
+// 새로고침 시 마지막 메뉴 유지 — 벨류업 메뉴면 데이터가 없으므로 업로드 모달 자동 오픈
+let _initTab = 'sales';
+try { _initTab = localStorage.getItem('vu_tab') || 'sales'; } catch (e) {}
+showMainTab(_initTab);
+if (_initTab === 'sales') openSettings();
 </script>
 <script>
 // ===== 최상위 탭 전환 =====
 let _svLoaded = false;
 function showMainTab(t) {
+  try { localStorage.setItem('vu_tab', t); } catch (e) {}
   document.getElementById('main-sales').style.display = t === 'sales' ? '' : 'none';
   document.getElementById('main-stock').style.display = t === 'stock' ? '' : 'none';
   document.getElementById('ttab-sales').classList.toggle('on', t === 'sales');
