@@ -273,6 +273,18 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 </head>
 <body>
 
+<!-- ── 간편 잠금 ── -->
+<div id="vu-lock" style="position:fixed;inset:0;background:#1B2130;z-index:999;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="width:320px;background:#232A3D;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
+    <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#4B6098,#2B3F66);display:grid;place-items:center;margin:0 auto 12px;color:#fff"><i data-lucide="lock" style="width:20px;height:20px"></i></div>
+    <div style="font-size:16px;font-weight:800;color:#F2F4F9;margin-bottom:2px">우주<span style="color:#8AA2FF">커넥트</span> 현황판</div>
+    <div style="font-size:12px;color:#99A1B5;margin-bottom:16px">비밀번호를 입력하세요</div>
+    <input id="vu-pass" type="password" autocomplete="off" style="width:100%;height:40px;border-radius:9px;border:1px solid rgba(255,255,255,0.14);background:rgba(255,255,255,0.06);color:#fff;font:inherit;font-size:14px;text-align:center;letter-spacing:0.2em;outline:none"/>
+    <div id="vu-lock-err" style="font-size:11.5px;color:#F5A9AA;min-height:16px;margin-top:6px"></div>
+    <button onclick="vuUnlock()" style="width:100%;height:38px;border:none;border-radius:9px;background:#4B6098;color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">확인</button>
+  </div>
+</div>
+
 <!-- ── 최상단 메뉴 ── -->
 <div class="topbar">
   <div class="topbar-in">
@@ -1478,6 +1490,27 @@ const svLoad = (() => {
       window._vuRestoring = false;
     }
   } catch (e) { console.warn('업로드 데이터 복원 실패', e); }
+})();
+
+// ── 간편 잠금 — 비밀번호는 아래 상수만 바꾸면 됨 (바꾸면 기존 접속자도 재입력) ──
+const VU_PASS = 'wz2026';
+(() => {
+  let ok = false;
+  try { ok = localStorage.getItem('vu_auth') === VU_PASS; } catch (e) {}
+  const lock = document.getElementById('vu-lock');
+  if (ok) { lock.style.display = 'none'; return; }
+  const inp = document.getElementById('vu-pass');
+  window.vuUnlock = () => {
+    if (inp.value === VU_PASS) {
+      try { localStorage.setItem('vu_auth', VU_PASS); } catch (e) {}
+      lock.style.display = 'none';
+    } else {
+      document.getElementById('vu-lock-err').textContent = '비밀번호가 달라요';
+      inp.value = ''; inp.focus();
+    }
+  };
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') vuUnlock(); });
+  setTimeout(() => inp.focus(), 50);
 })();
 </script>
 </body>
