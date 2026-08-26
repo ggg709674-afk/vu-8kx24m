@@ -609,16 +609,23 @@ function finishAnalysis(rows, rows2, swapped, rowsU) {
     warn += ' · T판매관리 파일에서 데이터를 읽지 못했어요 (판매변경이력 컬럼 확인 필요)';
   }
 
-  // 새로고침 유지 — 엑셀은 1일~오늘 누적분이므로 재업로드 시 통째로 갱신
+  // 새로고침 유지 + 온라인 공유 저장 — 누적분 재업로드 시 통째로 갱신.
+  // 개인정보 미저장: 집계에 쓰는 필드만 추려서 저장한다.
   if (!window._vuRestoring) {
     window._vuSavedAt = new Date().toISOString();
-    try {
-      localStorage.setItem('vu_data', JSON.stringify({
-        rows, rows2: rows2 || null, swapped: !!swapped, rowsU: rowsU || null,
-        names: { '개통': _files['개통'] ? _files['개통'].name : null, '접수': _files['접수'] ? _files['접수'].name : null, '유심': _files['유심'] ? _files['유심'].name : null },
-        savedAt: window._vuSavedAt
-      }));
-    } catch (e) { console.warn('vu_data 저장 실패', e); toast('데이터가 커서 새로고침 유지 저장은 실패했어요'); }
+    const VU_FIELDS = ['진행상태', '요금제상품명', '서비스청약일자', '서비스가입일자', '서비스관리번호', '판매처명', '대리점명', '판매변경이력', '단말기판매여부', '개통해지일자', '개통일'];
+    const strip = rs => rs ? rs.map(r => { const o = {}; VU_FIELDS.forEach(k => { if (r[k] !== undefined && r[k] !== null && r[k] !== '') o[k] = r[k]; }); return o; }) : null;
+    const saveObj = {
+      rows: strip(rows) || [], rows2: strip(rows2), swapped: !!swapped, rowsU: strip(rowsU),
+      names: { '개통': _files['개통'] ? _files['개통'].name : null, '접수': _files['접수'] ? _files['접수'].name : null, '유심': _files['유심'] ? _files['유심'].name : null },
+      savedAt: window._vuSavedAt
+    };
+    try { localStorage.setItem('vu_data', JSON.stringify(saveObj)); }
+    catch (e) { console.warn('vu_data 저장 실패', e); }
+    if (window._vuShare) {
+      window._vuShare.from('vu_shared').upsert({ id: 'main', data: saveObj, updated_at: window._vuSavedAt })
+        .then(({ error }) => toast(error ? '온라인 저장 실패: ' + error.message : '온라인 저장 완료 — 다른 기기에서도 이 데이터가 보입니다'));
+    }
   }
   TYPES.forEach(t => renderCurrent(t));
   renderUsim();
@@ -1364,6 +1371,8 @@ lucide.createIcons();
 </script>
 <script>
 // ===== 최상위 탭 전환 =====
+// 온라인 공유 저장소 (woozoo-apps) — 벨류업 데이터를 기기 간 공유
+window._vuShare = supabase.createClient('https://qpexfvwrlwkpjyihlnwz.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwZXhmdndybHdrcGp5aWhsbnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4OTAwMTIsImV4cCI6MjA5MzQ2NjAxMn0.Aq1b2i5UpQ2Y48nWlnygkkxrw-h8GufAkl8L8K8e0kY');
 let _svLoaded = false;
 function showMainTab(t) {
   try { localStorage.setItem('vu_tab', t); } catch (e) {}
@@ -1533,15 +1542,19 @@ const svLoad = (() => {
 })();
 
 // 새로고침 시 마지막 메뉴 유지 (업로드 모달은 톱니바퀴 클릭 시에만)
-(() => {
+(async () => {
   let t = 'sales';
   try { t = localStorage.getItem('vu_tab') || 'sales'; } catch (e) {}
   showMainTab(t);
-  // 업로드 데이터 복원 — 누적분 재업로드 시 finishAnalysis가 통째로 덮어씀
+  // 업로드 데이터 복원 — 온라인(vu_shared) 우선, 실패하면 이 브라우저 저장본
+  let d = null;
   try {
-    const raw = localStorage.getItem('vu_data');
-    if (raw) {
-      const d = JSON.parse(raw);
+    const { data } = await window._vuShare.from('vu_shared').select('data').eq('id', 'main').maybeSingle();
+    if (data && data.data) d = data.data;
+  } catch (e) { console.warn('온라인 복원 실패', e); }
+  if (!d) { try { const raw = localStorage.getItem('vu_data'); if (raw) d = JSON.parse(raw); } catch (e) {} }
+  try {
+    if (d) {
       ['개통', '접수', '유심'].forEach(k => { if (d.names && d.names[k]) _files[k] = { name: d.names[k] }; });
       window._vuSavedAt = d.savedAt || null;
       window._vuRestoring = true;
