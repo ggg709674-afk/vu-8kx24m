@@ -293,7 +293,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   #sv-hero { font-size:23px !important; }
   #sv-models-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
   #sv-models { min-width:620px; }
-  #main-stock > div { padding:14px 10px !important; }
+  #main-stock > div { padding:12px 6px !important; }
 }
 </style>
 </head>
@@ -1521,7 +1521,7 @@ const svLoad = (() => {
   function draw(pts) {
     const svg = $v('sv-chart'), wrap = $v('sv-wrap'), tip = $v('sv-tip');
     if (!pts.length) { svg.style.height = '0'; svg.innerHTML = ''; return; }
-    const W = Math.max(320, Math.round(wrap.clientWidth || 900)), H = 260, narrow = W < 480, padL = narrow ? 38 : 54, padR = narrow ? 6 : 16, padT = 20, padB = 28;
+    const W = Math.max(320, Math.round(wrap.clientWidth || 900)), H = 260, narrow = W < 480, padL = narrow ? 10 : 54, padR = narrow ? 4 : 16, padT = 20, padB = 28;
     let lo = Math.min(...pts.map(p => p.v)), hi = Math.max(...pts.map(p => p.v));
     if (lo === hi) { lo -= (lo * 0.03 || 1000000); hi += (hi * 0.03 || 1000000); }
     const padV = (hi - lo) * 0.1; lo -= padV; hi += padV; if (lo < 0) lo = 0;
@@ -1535,7 +1535,7 @@ const svLoad = (() => {
     const areaD = `${lineD}L${X(pts.length - 1).toFixed(1)},${(H - padB).toFixed(1)}L${X(0).toFixed(1)},${(H - padB).toFixed(1)}Z`;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.style.height = H + 'px';
     svg.innerHTML = `
-      ${yT.map(t => `<line x1="${padL}" x2="${W - padR}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" style="stroke:var(--border);stroke-width:1"/><text x="${padL - 7}" y="${(Y(t) + 3.5).toFixed(1)}" text-anchor="end" style="font-size:10.5px;fill:var(--text-hint)">${eok(t)}</text>`).join('')}
+      ${yT.map(t => `<line x1="${padL}" x2="${W - padR}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" style="stroke:var(--border);stroke-width:1"/>${narrow ? `<text x="${padL + 3}" y="${(Y(t) - 4).toFixed(1)}" text-anchor="start" style="font-size:10px;fill:var(--text-hint)">${eok(t)}</text>` : `<text x="${padL - 7}" y="${(Y(t) + 3.5).toFixed(1)}" text-anchor="end" style="font-size:10.5px;fill:var(--text-hint)">${eok(t)}</text>`}`).join('')}
       <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" style="stroke:var(--border);stroke-width:1"/>
       ${pts.map((p, i) => { const day = parseInt(p.d.slice(8), 10); return ((day - 1) % xStep === 0) ? `<text x="${X(i).toFixed(1)}" y="${H - padB + 17}" text-anchor="middle" style="font-size:10.5px;fill:var(--text-hint)">${day}일</text>` : ''; }).join('')}
       <path d="${areaD}" style="fill:var(--primary);opacity:0.07"/>
