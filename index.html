@@ -1460,9 +1460,9 @@ const svLoad = (() => {
         const THm = 'padding:8px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600';
         el.innerHTML = `
           <thead><tr style="color:var(--text-hint)">
-            <th style="text-align:left;${THm};width:40%">모델</th>
-            <th style="text-align:right;${THm};width:26%">수량</th>
-            <th style="text-align:right;${THm};width:34%">재고금액</th>
+            <th style="text-align:left;${THm};width:30%">모델</th>
+            <th style="text-align:right;${THm};width:24%">수량</th>
+            <th style="text-align:right;${THm};width:46%">재고금액</th>
           </tr></thead>
           <tbody>${rows.map(r => `<tr>
             <td style="${TDm};font-weight:700">${escM(r.m)}</td>
