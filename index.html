@@ -260,7 +260,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   .grid-4 { grid-template-columns:repeat(2,1fr); }
   .upload-grid { grid-template-columns:1fr; }
   .grid-6 { grid-template-columns:repeat(3,1fr); }
-  .grid-2 { grid-template-columns:1fr; }
+  .grid-2 { grid-template-columns:1fr !important; }   /* 인라인 컬럼 지정(유심 탭 등)보다 우선 — 모바일은 세로 스택 */
   .sec-cols, .sec-cols.three { grid-template-columns:1fr; }
 }
 @media (max-width:640px) {
