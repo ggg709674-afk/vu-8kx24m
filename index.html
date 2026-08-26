@@ -1415,26 +1415,30 @@ const svLoad = (() => {
         .sort((a, b) => (ordMap[a.m] ?? 999) - (ordMap[b.m] ?? 999) || b.amt - a.amt);
       const el = $v('sv-models');
       if (!el) return;
-      const TD = 'padding:10px 12px;border-bottom:1px solid var(--border-light);font-size:13.5px';
-      const TH = 'padding:9px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--white);font-size:12px;font-weight:600';
+      const maxAmt = Math.max(1, ...rows.map(r => r.amt));
+      const TD = 'padding:10px 14px;border-bottom:1px solid var(--border-light);font-size:13.5px;white-space:nowrap;width:1%';
+      const TH = 'padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;white-space:nowrap;width:1%';
       el.innerHTML = `
         <thead><tr style="color:var(--text-hint)">
           <th style="text-align:left;${TH}">모델</th>
           <th style="text-align:right;${TH}">단가</th>
           <th style="text-align:right;${TH}">수량</th>
           <th style="text-align:right;${TH}">재고금액</th>
+          <th style="padding:9px 14px;border-bottom:1px solid var(--border)"></th>
         </tr></thead>
         <tbody>${rows.map(r => `<tr>
           <td style="${TD};font-weight:700">${escM(r.m)}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;${r.price ? 'color:var(--text-sub)' : 'color:var(--text-hint)'}">${r.price ? fmtN(r.price) + '원' : '단가없음'}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${r.q.toLocaleString()}대</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--primary)">${r.amt ? fmtN(r.amt) + '원' : '-'}</td>
+          <td style="padding:10px 14px;border-bottom:1px solid var(--border-light)">${r.amt ? `<div style="height:14px;border-radius:4px;background:var(--primary);opacity:0.8;width:${Math.max(1.5, r.amt / maxAmt * 100).toFixed(1)}%;min-width:3px"></div>` : ''}</td>
         </tr>`).join('')}</tbody>
         <tfoot><tr style="font-weight:800;font-size:13.5px">
-          <td style="padding:11px 12px;border-top:2px solid var(--border)">합계 · ${rows.length}개 모델</td>
-          <td style="padding:11px 12px;border-top:2px solid var(--border)"></td>
-          <td style="padding:11px 12px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums">${incRows.length.toLocaleString()}대</td>
-          <td style="padding:11px 12px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;color:var(--primary)">${fmtN(cur)}원</td>
+          <td style="padding:11px 14px;border-top:2px solid var(--border);white-space:nowrap">합계 · ${rows.length}개 모델</td>
+          <td style="padding:11px 14px;border-top:2px solid var(--border)"></td>
+          <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${incRows.length.toLocaleString()}대</td>
+          <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;color:var(--primary);white-space:nowrap">${fmtN(cur)}원</td>
+          <td style="padding:11px 14px;border-top:2px solid var(--border)"></td>
         </tr></tfoot>`;
     })();
     let snapMap = {}, snapMiss = '';
