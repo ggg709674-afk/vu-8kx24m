@@ -1450,13 +1450,11 @@ const svLoad = (() => {
   return load;
 })();
 
-// 새로고침 시 마지막 메뉴 유지 — 벨류업 메뉴면 데이터가 없으므로 업로드 모달 자동 오픈
-// (showMainTab이 이 블록에 정의돼 있어 복원도 여기서 실행해야 함)
+// 새로고침 시 마지막 메뉴 유지 (업로드 모달은 톱니바퀴 클릭 시에만)
 (() => {
   let t = 'sales';
   try { t = localStorage.getItem('vu_tab') || 'sales'; } catch (e) {}
   showMainTab(t);
-  if (t === 'sales') openSettings();
 })();
 </script>
 </body>
