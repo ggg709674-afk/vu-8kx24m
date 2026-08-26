@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>T유선 벨류업 데이터 · 우주커넥트</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.577.0/dist/umd/lucide.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root {
+  --bg: #F4F5F7;
+  --white: #FFFFFF;
+  --primary: #2B3F66;
+  --primary-dark: #1F2E4D;
+  --primary-light: #E9EDF5;
+  --text: #16181D;
+  --text-sub: #565A66;
+  --text-hint: #838894;
+  --border: #EAECEF;
+  --border-light: #F1F2F4;
+  --green: #2D7A4F;
+  --green-bg: #E4F2EA;
+  --red: #B4393A;
+  --red-bg: #F8E5E6;
+  --orange: #916A12;
+  --orange-bg: #F7EFD9;
+  --purple: #5B4F8F;
+  --purple-bg: #ECE7F4;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(20,25,40,0.04), 0 1px 3px rgba(20,25,40,0.06);
+  --shadow-md: 0 2px 4px rgba(20,25,40,0.04), 0 4px 12px -2px rgba(20,25,40,0.08);
+  --shadow-lg: 0 8px 24px -6px rgba(20,25,40,0.12), 0 2px 6px rgba(20,25,40,0.05);
+}
+*, body * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s, border-color 0.2s, color 0.15s; }
+body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; letter-spacing: -0.015em; -webkit-font-smoothing: antialiased; }
+
+/* ── 최상위 탭 (유선/유심 · 재고현황) ── */
+.top-tabs { display:flex; gap:8px; margin-bottom:16px; }
+.top-tab { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:10px; border:1px solid var(--border); background:var(--white); font:inherit; font-size:14px; font-weight:700; color:var(--text-hint); cursor:pointer; box-shadow:var(--shadow); }
+.top-tab:hover { color:var(--text); border-color:var(--text-hint); }
+.top-tab.on { background:var(--primary); border-color:var(--primary); color:#fff; }
+
+/* ── 탭 ── */
+.tabs { display:flex; gap:4px; margin:20px 0 14px; border-bottom:1px solid var(--border); }
+.tab { display:inline-flex; align-items:center; gap:7px; padding:10px 16px; font:inherit; font-size:13.5px; font-weight:600; color:var(--text-hint); background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; }
+.tab:hover { color:var(--text); }
+.tab.on { color:var(--primary); border-bottom-color:var(--primary); font-weight:700; }
+.tab .cnt { font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--border-light); color:var(--text-hint); }
+.tab.on .cnt { background:var(--primary-light); color:var(--primary); }
+
+/* ── 레이아웃 ── */
+.sa-wrap { max-width: 1400px; margin: 0 auto; padding: 20px 24px 40px; }
+.sa-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
+.sa-title { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
+.sa-title span { color:var(--primary); }
+.sa-sub { font-size:12px; color:var(--text-hint); margin-top:3px; }
+.sa-actions { display:flex; align-items:center; gap:8px; }
+
+/* ── 섹션 헤더 ── */
+.section-head { display:flex; align-items:center; gap:10px; margin:20px 0 10px; }
+.section-head:first-child { margin-top:0; }
+.section-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; font-size:12px; font-weight:700; }
+.section-badge.wired { background:var(--primary-light); color:var(--primary); }
+.section-badge.iptv  { background:var(--purple-bg); color:var(--purple); }
+.section-badge.usim  { background:var(--green-bg); color:var(--green); }
+.section-title { font-size:16px; font-weight:800; color:var(--text); letter-spacing:-0.3px; }
+.section-line { flex:1; height:1px; background:var(--border); }
+
+/* ── 업로드 그리드 ── */
+.upload-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px; }
+.upload-label { font-size:12px; font-weight:700; color:var(--text-sub); margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+.upload-badge-req { background:var(--primary); color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+.upload-badge-opt { background:var(--border); color:var(--text-hint); font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+
+/* ── 드롭존 ── */
+.drop-zone { background:var(--white); border:2px dashed var(--border); border-radius:14px; padding:14px 16px; text-align:left; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:14px; justify-content:flex-start; }
+.drop-zone:hover, .drop-zone.hover { border-color:var(--primary); background:var(--primary-light); }
+.drop-zone.loaded { border-color:var(--green); background:var(--green-bg); border-style:solid; }
+.drop-zone.loaded .drop-icon-sm { background:rgba(45,122,79,0.15); color:var(--green); }
+.drop-icon-sm { width:36px; height:36px; border-radius:10px; background:var(--primary-light); color:var(--primary); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; }
+.drop-title { font-size:13px; font-weight:700; color:var(--text); }
+.drop-desc { font-size:11px; color:var(--text-hint); margin-top:2px; }
+
+/* ── 분석 버튼 래퍼 ── */
+.analyze-wrap { display:flex; justify-content:center; margin-bottom:14px; }
+.btn-analyze { height:44px; padding:0 36px; font-size:14px; font-weight:800; letter-spacing:-0.2px; gap:8px; border-radius:12px; }
+.btn-sa:disabled { opacity:0.35; cursor:not-allowed; pointer-events:none; }
+
+/* ── 인포바 ── */
+.info-bar { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--white); border:1px solid var(--border); border-radius:12px; margin-bottom:14px; font-size:12px; color:var(--text-sub); flex-wrap:wrap; }
+.info-bar .iv { color:var(--text); font-weight:700; }
+.info-bar-icon { width:26px; height:26px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+/* ── 그리드 ── */
+.grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px; }
+.grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:14px; }
+.grid-2 { display:grid; grid-template-columns:1.2fr 1fr; gap:12px; margin-bottom:12px; }
+.sec-cols { display:grid; grid-template-columns:1fr 1.15fr; gap:12px; margin-bottom:12px; align-items:stretch; }
+.sec-cols.three { grid-template-columns:1fr 1fr 1.15fr; }
+.sec-side { display:flex; flex-direction:column; gap:8px; }
+.usim-kpis .kpi { flex:1; display:flex; flex-direction:column; justify-content:center; }
+.grid-3c { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+
+/* ── 차트 카드 ── */
+.chart-card { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:12px 14px; }
+.chart-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.chart-sub { font-size:11px; color:var(--text-hint); margin-bottom:8px; }
+
+/* ── KPI 카드 ── */
+.kpi { background:var(--white); border:1px solid var(--border); border-radius:14px; padding:12px 14px; position:relative; overflow:hidden; }
+.kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.kpi.k-blue::before   { background:var(--primary); }
+.kpi.k-green::before  { background:var(--green); }
+.kpi.k-red::before    { background:var(--red); }
+.kpi.k-orange::before { background:var(--orange); }
+.kpi.k-gray::before   { background:var(--text-hint); }
+.kpi-label { font-size:11px; font-weight:600; color:var(--text-hint); letter-spacing:0.03em; margin-bottom:6px; }
+.kpi-value { font-size:20px; font-weight:800; color:var(--text); letter-spacing:-1px; line-height:1; }
+.kpi-value small { font-size:13px; font-weight:700; color:var(--text-hint); margin-left:4px; }
+.kpi-sub { font-size:11px; color:var(--text-hint); margin-top:6px; }
+
+/* ── 목표 카드 ── */
+.goal-card { background:var(--white); border:1.5px solid var(--border); border-radius:16px; padding:16px 18px; margin-bottom:0; position:relative; overflow:hidden; }
+.goal-card.goal-hit  { border-color:rgba(16,185,129,0.35); background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(16,185,129,0.01) 40%); }
+.goal-card.goal-miss { border-color:rgba(245,158,11,0.35); background:linear-gradient(135deg,rgba(245,158,11,0.06),rgba(245,158,11,0.01) 40%); }
+.goal-head { display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+.goal-title { font-size:15px; font-weight:800; color:var(--text); letter-spacing:-0.3px; }
+.goal-target { font-size:11px; color:var(--text-hint); margin-top:2px; font-weight:600; }
+.goal-badge { font-size:11px; font-weight:800; padding:5px 12px; border-radius:999px; flex-shrink:0; letter-spacing:0.02em; }
+.goal-badge.b-hit  { background:var(--green); color:#fff; }
+.goal-badge.b-miss { background:var(--orange); color:#fff; }
+.goal-main { display:flex; align-items:baseline; gap:14px; margin-bottom:10px; flex-wrap:wrap; }
+.goal-percent { font-size:34px; font-weight:900; color:var(--text); letter-spacing:-1.5px; line-height:1; font-variant-numeric:tabular-nums; }
+.goal-percent small { font-size:14px; font-weight:800; color:var(--text-hint); margin-left:3px; letter-spacing:-0.5px; }
+.goal-bar-wrap { margin-bottom:10px; }
+.goal-bar { position:relative; height:12px; background:var(--border-light); border-radius:999px; }
+.goal-bar-fill { height:100%; border-radius:999px; transition:width .8s cubic-bezier(.2,.8,.2,1); }
+.goal-card.goal-hit  .goal-bar-fill { background:linear-gradient(90deg,#4F8EF7,#10B981); }
+.goal-card.goal-miss .goal-bar-fill { background:linear-gradient(90deg,#F59E0B,#EF4444); }
+.goal-detail { display:flex; align-items:center; flex-wrap:wrap; gap:6px 14px; font-size:12px; color:var(--text-sub); padding-top:10px; border-top:1px dashed var(--border); }
+.goal-detail-item { display:flex; align-items:center; gap:6px; }
+.goal-detail-item b { color:var(--text); font-variant-numeric:tabular-nums; }
+.goal-detail-sum { margin-left:auto; font-weight:700; color:var(--text); padding:4px 10px; border-radius:8px; background:var(--border-light); }
+.goal-footer { display:flex; align-items:center; gap:10px; padding:8px 12px; margin-top:10px; border-radius:10px; background:var(--primary-light); font-size:12px; color:var(--text-sub); line-height:1.45; }
+.goal-footer.done { background:var(--green-bg); color:var(--green); }
+.goal-footer.warn { background:var(--orange-bg); color:var(--orange); }
+.goal-footer-icon { width:28px; height:28px; border-radius:8px; background:var(--white); color:var(--primary); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+.goal-footer.done .goal-footer-icon { color:var(--green); }
+.goal-footer.warn .goal-footer-icon { color:var(--orange); }
+.goal-footer b { color:var(--primary); font-variant-numeric:tabular-nums; font-weight:800; }
+.goal-footer.done b { color:var(--green); }
+.goal-footer.warn b { color:var(--orange); }
+
+/* ── 밸류업 배너 ── */
+.vu-banner {
+  display:flex; align-items:stretch; gap:14px; flex-wrap:wrap;
+  background:linear-gradient(135deg,#4F8EF7 0%,#6366F1 60%,#8B5CF6 100%);
+  border-radius:16px; padding:18px 22px; margin-bottom:18px;
+  box-shadow:0 4px 16px rgba(79,142,247,0.18);
+  color:#fff; position:relative; overflow:hidden;
+}
+.vu-banner::before { content:''; position:absolute; right:-40px; top:-40px; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.08); pointer-events:none; }
+.vu-banner-head { display:flex; flex-direction:column; gap:3px; flex-shrink:0; padding-right:18px; border-right:1px solid rgba(255,255,255,0.22); }
+.vu-tag { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:800; background:rgba(255,255,255,0.18); padding:3px 10px; border-radius:999px; letter-spacing:0.04em; width:fit-content; backdrop-filter:blur(4px); }
+.vu-banner-title { font-size:16px; font-weight:900; letter-spacing:-0.4px; margin-top:6px; }
+.vu-banner-sub { font-size:11px; opacity:0.78; font-weight:600; }
+.vu-goals { display:flex; align-items:center; gap:18px; flex:1; flex-wrap:wrap; }
+.vu-goal { display:flex; align-items:center; gap:10px; padding:6px 0; min-width:0; }
+.vu-goal-icon { width:32px; height:32px; border-radius:9px; background:rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; backdrop-filter:blur(4px); }
+.vu-goal-body { display:flex; flex-direction:column; min-width:0; }
+.vu-goal-name { font-size:11.5px; font-weight:600; opacity:0.85; letter-spacing:-0.1px; white-space:nowrap; }
+.vu-goal-pct { font-size:22px; font-weight:900; letter-spacing:-0.8px; line-height:1.1; font-variant-numeric:tabular-nums; }
+.vu-goal-pct small { font-size:13px; font-weight:700; opacity:0.8; margin-left:1px; }
+.vu-divider { width:1px; height:32px; background:rgba(255,255,255,0.22); flex-shrink:0; }
+
+/* ── 광랜 현황 스트립 ── */
+.gwang-strip { display:flex; align-items:center; gap:8px 14px; padding:8px 14px; background:var(--primary-light); border:1px solid rgba(43,63,102,0.15); border-radius:10px; font-size:12px; color:var(--text-sub); flex-wrap:wrap; }
+.gwang-strip-badge { background:var(--primary); color:#fff; font-size:10px; font-weight:800; padding:3px 9px; border-radius:999px; flex-shrink:0; }
+.gwang-strip b { color:var(--primary); font-variant-numeric:tabular-nums; font-weight:800; }
+.gwang-strip small { color:var(--text-hint); }
+
+/* ── 업로드 요약 바 ── */
+.upload-summary-bar { display:flex; align-items:center; gap:10px; padding:8px 14px; background:var(--white); border:1px solid var(--border); border-radius:12px; margin-bottom:14px; font-size:12px; color:var(--text-sub); flex-wrap:wrap; }
+.upload-summary-bar b { color:var(--text); font-weight:700; }
+.upload-summary-time { margin-left:auto; font-size:11px; color:var(--text-hint); }
+
+/* ── 예상 마감수량 바 ── */
+.forecast-bar { display:flex; align-items:center; gap:12px; padding:8px 14px; background:var(--white); border:1px solid var(--border); border-left:4px solid var(--primary); border-radius:12px; flex-wrap:wrap; }
+.forecast-icon { width:34px; height:34px; border-radius:9px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.forecast-label { font-size:11px; font-weight:600; color:var(--text-hint); }
+.forecast-value { font-size:20px; font-weight:900; color:var(--primary); letter-spacing:-0.8px; line-height:1.1; font-variant-numeric:tabular-nums; }
+.forecast-value small { font-size:12px; font-weight:600; color:var(--text-hint); margin-left:2px; }
+.forecast-detail { margin-left:auto; font-size:12px; color:var(--text-sub); display:flex; align-items:center; gap:6px 14px; flex-wrap:wrap; }
+.forecast-detail b { color:var(--text); font-variant-numeric:tabular-nums; }
+
+/* ── 빈 상태 ── */
+.empty-state { text-align:center; padding:40px 20px; color:var(--text-hint); background:var(--white); border:1px solid var(--border); border-radius:14px; }
+.empty-state-icon { width:48px; height:48px; margin:0 auto 12px; border-radius:14px; background:var(--border-light); display:flex; align-items:center; justify-content:center; color:var(--text-hint); }
+.empty-state-title { font-size:13px; font-weight:700; color:var(--text-sub); margin-bottom:4px; }
+.empty-state-desc { font-size:12px; color:var(--text-hint); }
+
+/* ── 버튼 ── */
+.btn-sa { background:var(--primary); color:#fff; border:none; height:34px; padding:0 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:5px; transition:background .15s; }
+.btn-sa:hover { background:var(--primary-dark); }
+.btn-sa.ghost { background:transparent; border:1px solid var(--border); color:var(--text-sub); }
+.btn-sa.ghost:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
+
+/* ── 차트 tooltip ── */
+.chart-tip { position:fixed; background:#111827; color:#fff; padding:8px 12px; border-radius:8px; font-size:12px; font-weight:600; pointer-events:none; z-index:9998; opacity:0; transition:opacity .1s; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.25); }
+.chart-tip.show { opacity:1; }
+.chart-tip .tip-label { font-size:10px; color:rgba(255,255,255,0.65); font-weight:500; margin-bottom:3px; letter-spacing:0.02em; }
+.chart-tip .tip-val { font-size:13px; display:flex; align-items:center; gap:6px; }
+.chart-tip .tip-val b { color:#fff; font-variant-numeric:tabular-nums; }
+.chart-tip .tip-val .tip-pct { color:rgba(255,255,255,0.7); font-weight:500; font-size:11px; }
+.line-dot, .donut-seg { cursor:pointer; }
+
+/* ── 토스트 ── */
+.toast-sa { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:#111827; color:#fff; padding:11px 20px; border-radius:100px; font-size:13px; font-weight:600; opacity:0; transition:all .3s cubic-bezier(.34,1.56,.64,1); pointer-events:none; white-space:nowrap; z-index:9999; box-shadow:0 4px 20px rgba(0,0,0,0.2); }
+.toast-sa.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── 미니 테이블 ── */
+.mini-table { width:100%; border-collapse:collapse; }
+.mini-table th { padding:8px 10px; font-size:10px; font-weight:700; color:var(--text-hint); text-align:left; border-bottom:1px solid var(--border); letter-spacing:0.05em; text-transform:uppercase; }
+.mini-table th.num, .mini-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+.mini-table td { padding:9px 10px; font-size:12px; color:var(--text); border-bottom:1px solid var(--border-light); }
+.mini-table tr:last-child td { border-bottom:none; }
+.mini-bar { display:inline-block; height:6px; border-radius:3px; background:var(--primary); vertical-align:middle; margin-right:6px; }
+
+/* ── 반응형 ── */
+@media (max-width:960px) {
+  .grid-4 { grid-template-columns:repeat(2,1fr); }
+  .upload-grid { grid-template-columns:1fr; }
+  .grid-6 { grid-template-columns:repeat(3,1fr); }
+  .grid-2 { grid-template-columns:1fr; }
+  .sec-cols, .sec-cols.three { grid-template-columns:1fr; }
+}
+@media (max-width:640px) {
+  .sa-wrap { padding:16px 12px 40px; }
+  .sa-head { flex-direction:column; align-items:flex-start; }
+  .sa-title { font-size:18px; }
+  .grid-4, .grid-6 { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .kpi-value { font-size:18px; }
+  .goal-percent { font-size:30px; }
+  .vu-banner { padding:14px 16px; gap:10px; }
+  .vu-banner-head { padding-right:0; padding-bottom:10px; border-right:none; border-bottom:1px solid rgba(255,255,255,0.22); width:100%; }
+  .vu-divider { display:none; }
+  .upload-grid { grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="sa-wrap">
+
+  <!-- ── 헤더 ── -->
+  <div class="sa-head">
+    <div>
+      <div class="sa-title">T유선 <span>벨류업</span> 데이터</div>
+      <div class="sa-sub">진행상태 · 요금제 · 판매처 현황을 한눈에</div>
+    </div>
+    <div class="sa-actions">
+      <button class="btn-sa ghost" onclick="refreshAll()">
+        <i data-lucide="refresh-cw" style="width:12px;height:12px"></i> 새로고침
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 6월 벨류업 목표 배너 ── -->
+  <div class="vu-banner">
+    <div class="vu-banner-head">
+      <span class="vu-tag">🎯 8월 벨류업 목표</span>
+      <div class="vu-banner-title">월간 KPI</div>
+      <div class="vu-banner-sub">개통 기준 · 진행 현황은 아래 카드 참고</div>
+    </div>
+    <div class="vu-goals">
+      <div class="vu-goal">
+        <div class="vu-goal-icon">⚡</div>
+        <div class="vu-goal-body">
+          <span class="vu-goal-name">초고속 500M 이상</span>
+          <span class="vu-goal-pct">85<small>%</small></span>
+        </div>
+      </div>
+      <div class="vu-divider"></div>
+      <div class="vu-goal">
+        <div class="vu-goal-icon">📺</div>
+        <div class="vu-goal-body">
+          <span class="vu-goal-name">TV 스탠다드 이상</span>
+          <span class="vu-goal-pct">90<small>%</small></span>
+        </div>
+      </div>
+      <div class="vu-divider"></div>
+      <div class="vu-goal">
+        <div class="vu-goal-icon">🎬</div>
+        <div class="vu-goal-body">
+          <span class="vu-goal-name">TV ALL 이상</span>
+          <span class="vu-goal-pct">30<small>%</small></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 최상위 탭: 유선/유심 · 재고현황 ── -->
+  <div class="top-tabs">
+    <button class="top-tab on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> 유선/유심</button>
+    <button class="top-tab" id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 재고현황</button>
+  </div>
+
+  <div id="main-sales">
+  <!-- ── 업로드 (2개) ── -->
+  <div id="drop-wrap">
+    <div class="upload-grid">
+
+      <!-- 개통파일 -->
+      <div>
+        <div class="upload-label">
+          <i data-lucide="file-check-2" style="width:13px;height:13px"></i>
+          개통파일
+          <span class="upload-badge-req">필수</span>
+        </div>
+        <label class="drop-zone" id="dz-개통" style="cursor:pointer">
+          <div class="drop-icon-sm" id="dz-icon-개통">
+            <i data-lucide="upload-cloud" style="width:16px;height:16px"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="drop-title" id="dz-title-개통">개통 엑셀(.xlsx) 업로드</div>
+            <div class="drop-desc" id="dz-desc-개통">요금제상품명으로 자동 분류됨 · 드래그 또는 클릭</div>
+          </div>
+          <span class="btn-sa">
+            <i data-lucide="file-up" style="width:13px;height:13px"></i> 파일 선택
+          </span>
+          <input type="file" id="file-개통" accept=".xlsx,.xls" style="display:none"/>
+        </label>
+      </div>
+
+      <!-- 접수파일 -->
+      <div>
+        <div class="upload-label">
+          <i data-lucide="file-text" style="width:13px;height:13px"></i>
+          접수파일
+          <span class="upload-badge-opt">선택</span>
+        </div>
+        <label class="drop-zone" id="dz-접수" style="cursor:pointer">
+          <div class="drop-icon-sm" id="dz-icon-접수" style="background:var(--border-light);color:var(--text-hint)">
+            <i data-lucide="upload-cloud" style="width:16px;height:16px"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="drop-title" id="dz-title-접수">접수 엑셀(.xlsx) 업로드</div>
+            <div class="drop-desc" id="dz-desc-접수">개통파일과 함께 업로드 시 광랜 접수 분석 추가</div>
+          </div>
+          <span class="btn-sa ghost">
+            <i data-lucide="file-up" style="width:13px;height:13px"></i> 파일 선택
+          </span>
+          <input type="file" id="file-접수" accept=".xlsx,.xls" style="display:none"/>
+        </label>
+      </div>
+
+      <!-- T판매관리 (유심) -->
+      <div>
+        <div class="upload-label">
+          <i data-lucide="smartphone" style="width:13px;height:13px"></i>
+          T판매관리
+          <span class="upload-badge-opt">선택</span>
+        </div>
+        <label class="drop-zone" id="dz-유심" style="cursor:pointer">
+          <div class="drop-icon-sm" id="dz-icon-유심" style="background:var(--border-light);color:var(--text-hint)">
+            <i data-lucide="upload-cloud" style="width:16px;height:16px"></i>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="drop-title" id="dz-title-유심">T판매관리 엑셀(.xlsx) 업로드</div>
+            <div class="drop-desc" id="dz-desc-유심">유심개통 수량 분석 (단말기 미판매 건)</div>
+          </div>
+          <span class="btn-sa ghost">
+            <i data-lucide="file-up" style="width:13px;height:13px"></i> 파일 선택
+          </span>
+          <input type="file" id="file-유심" accept=".xlsx,.xls" style="display:none"/>
+        </label>
+      </div>
+
+    </div>
+
+    <!-- 분석 버튼 -->
+    <div class="analyze-wrap">
+      <button id="btn-analyze" class="btn-sa btn-analyze" disabled onclick="runAnalysis()">
+        <i data-lucide="bar-chart-2" style="width:15px;height:15px"></i> 분석하기
+      </button>
+    </div>
+  </div>
+
+  <!-- 분석 후 업로드 영역 대신 표시되는 요약 바 -->
+  <div id="upload-summary" style="display:none"></div>
+
+  <!-- ── 탭 전환 (유선 / IPTV / 유심) ── -->
+  <div class="tabs" id="view-tabs" style="display:none">
+    <button class="tab on" id="tab-유선" onclick="showTab('유선')"><i data-lucide="wifi" style="width:13px;height:13px"></i> 유선 판매내역</button>
+    <button class="tab" id="tab-IPTV" onclick="showTab('IPTV')"><i data-lucide="tv" style="width:13px;height:13px"></i> IPTV 판매내역</button>
+    <button class="tab" id="tab-유심" onclick="showTab('유심')"><i data-lucide="smartphone" style="width:13px;height:13px"></i> 유심 개통</button>
+  </div>
+  <div class="tab-panel" id="panel-유선"><div id="content-유선"></div></div>
+  <div class="tab-panel" id="panel-IPTV" style="display:none"><div id="content-IPTV"></div></div>
+  <div class="tab-panel" id="panel-유심" style="display:none"><div id="content-유심"></div></div>
+  </div><!-- /main-sales -->
+
+  <!-- ── 재고현황 ── -->
+  <div id="main-stock" style="display:none">
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <div>
+          <div style="font-size:12px;color:var(--text-hint);font-weight:600;margin-bottom:2px">현재 재고금액</div>
+          <span id="sv-hero" style="font-size:32px;font-weight:800;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1.1">-</span><span id="sv-hero-sub" style="font-size:13.5px;font-weight:600;color:var(--text-sub);margin-left:8px"></span>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+          <span id="sv-cap" style="font-size:11.5px;color:var(--text-hint)"></span>
+          <button class="btn-sa ghost" onclick="svLoad()">새로고침</button>
+        </div>
+      </div>
+      <div id="sv-wrap" style="position:relative">
+        <svg id="sv-chart" style="display:block;width:100%"></svg>
+        <div id="sv-tip" style="position:absolute;display:none;pointer-events:none;background:#23293A;color:#E8EBF2;font-size:12px;line-height:1.5;padding:7px 10px;border-radius:8px;box-shadow:var(--shadow-lg);white-space:nowrap;z-index:5"></div>
+      </div>
+      <div id="sv-note" style="font-size:11.5px;color:var(--text-hint);margin-top:8px"></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast" class="toast-sa"></div>
+<div id="chart-tip" class="chart-tip"></div>
+
+<script>
+const TYPES = ['유선', 'IPTV'];
+const PALETTE = ['#4F8EF7','#10B981','#F59E0B','#EF4444','#8B5CF6','#14B8A6','#F97316','#EC4899','#6366F1','#84CC16','#06B6D4','#A855F7','#F43F5E'];
+const STATUS_COLOR = {
+  '개통':     '#10B981',
+  '접수':     '#4F8EF7',
+  '접수취소': '#EF4444',
+  '해지':     '#F59E0B',
+  '_기타':    '#94A3B8',
+};
+
+// ── 파일 저장소 & 분석 캐시 ──
+const _files = { '개통': null, '접수': null, '유심': null };
+const _cache = { '유선': null, 'IPTV': null, '접수_gwang': null, '접수현황': null, '유심': null };
+
+// ── 드롭존 셋업 ──
+function setupDropZone(dzId, inputId, fileKey) {
+  const dz = document.getElementById(dzId);
+  const fi = document.getElementById(inputId);
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('hover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('hover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('hover');
+    if (e.dataTransfer.files[0]) storeFile(fileKey, e.dataTransfer.files[0]);
+  });
+  fi.addEventListener('change', e => {
+    if (e.target.files[0]) { storeFile(fileKey, e.target.files[0]); e.target.value = ''; }
+  });
+}
+setupDropZone('dz-개통', 'file-개통', '개통');
+setupDropZone('dz-접수', 'file-접수', '접수');
+setupDropZone('dz-유심', 'file-유심', '유심');
+
+function storeFile(fileKey, file) {
+  _files[fileKey] = file;
+  const dz    = document.getElementById('dz-' + fileKey);
+  const title = document.getElementById('dz-title-' + fileKey);
+  const desc  = document.getElementById('dz-desc-' + fileKey);
+  const icon  = document.getElementById('dz-icon-' + fileKey);
+  dz.classList.add('loaded');
+  title.textContent = file.name;
+  desc.textContent  = '파일 선택됨 · 분석하기 버튼을 눌러 시작하세요';
+  icon.innerHTML    = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+  updateAnalyzeButton();
+}
+
+function updateAnalyzeButton() {
+  document.getElementById('btn-analyze').disabled = !_files['개통'];
+}
+
+// ── 분석 실행 ──
+function runAnalysis() {
+  if (!_files['개통']) return;
+  toast('개통파일 읽는 중...');
+
+  readExcel(_files['개통'], rows => {
+    if (!rows.length) { toast('❌ 개통파일 데이터 없음'); return; }
+
+    // 접수 → 유심(T판매관리) 순으로 읽고 마무리
+    const stepUsim = (rowsG, rowsJ, swapped) => {
+      if (_files['유심']) {
+        toast('T판매관리 파일 읽는 중...');
+        readExcel(_files['유심'], rowsU => finishAnalysis(rowsG, rowsJ, swapped, rowsU), '판매변경이력');
+      } else {
+        finishAnalysis(rowsG, rowsJ, swapped, null);
+      }
+    };
+
+    if (_files['접수']) {
+      toast('접수파일 읽는 중...');
+      readExcel(_files['접수'], rows2 => {
+        // 파일명이 거의 같아 개통/접수를 반대로 올리는 경우 자동 교체
+        // (접수기준 파일 = 진행상태 '접수' 비율이 더 높은 쪽)
+        const jeopsuRatio = rs => rs.length ? rs.filter(r => r['진행상태'] === '접수').length / rs.length : 0;
+        let swapped = false;
+        if (rows2.length && jeopsuRatio(rows) > jeopsuRatio(rows2)) {
+          const tmp = rows; rows = rows2; rows2 = tmp;
+          swapped = true;
+        }
+        stepUsim(rows, rows2, swapped);
+      });
+    } else {
+      stepUsim(rows, null, false);
+    }
+  });
+}
+
+function finishAnalysis(rows, rows2, swapped, rowsU) {
+  const split = { '유선':[], 'IPTV':[] };
+  rows.forEach(r => {
+    const t = classifyRow(r['요금제상품명']);
+    if (t) split[t].push(r);
+  });
+  const typesFound = TYPES.filter(t => split[t].length > 0);
+  if (!typesFound.length) { toast('❌ 분류 가능한 행이 없어요 (요금제상품명 확인)'); return; }
+
+  typesFound.forEach(t => {
+    const summary = aggregate(split[t], t);
+    _cache[t] = {
+      file_name: _files[swapped ? '접수' : '개통'].name,
+      total: summary.total,
+      summary,
+      updated_at: new Date().toISOString()
+    };
+  });
+
+  _cache['접수_gwang'] = null;
+  _cache['접수현황'] = null;
+  let warn = '';
+  if (rows2 && rows2.length) {
+    _cache['접수_gwang'] = aggregateJeopsu(rows2);
+    _cache['접수현황'] = aggregateJeopsuStatus(rows2, _files[swapped ? '개통' : '접수'].name);
+    const jsSum = TYPES.reduce((s,t) => s + _cache['접수현황'][t].total, 0);
+    if (!jsSum) {
+      warn = ' · 접수파일 분류 0건 (요금제상품명 컬럼 확인 필요)';
+      console.warn('접수파일 첫 행 컬럼:', rows2[0] ? Object.keys(rows2[0]) : '(없음)');
+    }
+  } else if (_files['접수']) {
+    warn = ' · 접수파일에서 데이터를 읽지 못했어요 (진행상태 컬럼 확인 필요)';
+  }
+
+  _cache['유심'] = (rowsU && rowsU.length) ? aggregateUsim(rowsU, _files['유심'].name) : null;
+  if (_files['유심'] && !_cache['유심']) {
+    warn += ' · T판매관리 파일에서 데이터를 읽지 못했어요 (판매변경이력 컬럼 확인 필요)';
+  }
+
+  TYPES.forEach(t => renderCurrent(t));
+  renderUsim();
+  renderUploadSummary();
+  toast((swapped ? '✅ 분석 완료 · 개통/접수 파일이 바뀌어 있어 자동 교체했어요' : '✅ 분석 완료') + warn);
+}
+
+// ── 엑셀 컬럼 별칭 (파일마다 헤더 명칭이 달라도 인식) ──
+const COL_ALIASES = {
+  '진행상태':       ['진행상태','처리상태','접수상태','상태'],
+  '요금제상품명':   ['요금제상품명','요금상품명','요금제명','상품명'],
+  '서비스청약일자': ['서비스청약일자','청약일자','접수일자','신청일자'],
+  '서비스가입일자': ['서비스가입일자','가입일자','개통일자','설치일자'],
+  '판매처명':       ['판매처명','대리점명','판매점명','판매점'],
+};
+
+// 상태값 표기가 달라도 4개 그룹(개통/접수/접수취소/해지)으로 정규화
+function normStatus(v) {
+  if (v == null) return null;
+  const s = String(v).replace(/\s/g,'');
+  if (s.includes('취소')) return '접수취소';
+  if (s.includes('해지')) return '해지';
+  if (s.includes('개통') || s.includes('완료')) return '개통';
+  if (s.includes('접수') || s.includes('진행')) return '접수';
+  return s;
+}
+
+function normalizeRow(r) {
+  const o = {};
+  Object.keys(r).forEach(k => { o[String(k).replace(/\s/g,'')] = r[k]; });
+  Object.entries(COL_ALIASES).forEach(([canon, aliases]) => {
+    if (o[canon] != null) return;
+    for (const a of aliases) { if (o[a] != null) { o[canon] = o[a]; break; } }
+  });
+  o['진행상태'] = normStatus(o['진행상태']);
+  return o;
+}
+
+function readExcel(file, callback, keyCol) {
+  const reader = new FileReader();
+  reader.onerror = () => toast('❌ 파일 읽기 실패');
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type:'array', cellDates:true });
+      const keyAliases = COL_ALIASES[keyCol || '진행상태'] || [keyCol];
+      const isKeyHeader = c => typeof c === 'string' && keyAliases.includes(c.replace(/\s/g,''));
+      let rows = [];
+      // 시트를 순회하며 기준 컬럼이 있는 시트를 찾고, 헤더가 1행이 아니면(상단 제목/빈 줄) 헤더 행을 탐색해 재파싱
+      for (const name of wb.SheetNames) {
+        const sheet = wb.Sheets[name];
+        let r = XLSX.utils.sheet_to_json(sheet, { defval:null });
+        const hasKey = r.length && Object.keys(r[0]).some(isKeyHeader);
+        if (!hasKey) {
+          const aoa = XLSX.utils.sheet_to_json(sheet, { header:1, defval:null });
+          const hi = aoa.findIndex(row => row && row.some(isKeyHeader));
+          r = hi >= 0 ? XLSX.utils.sheet_to_json(sheet, { defval:null, range: hi }) : [];
+        }
+        if (r.length) { rows = r; break; }
+      }
+      callback(rows.map(normalizeRow));
+    } catch(err) {
+      console.error(err);
+      toast('❌ 오류: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── 접수파일 광랜 집계 ──
+function aggregateJeopsu(rows) {
+  const dates = rows.map(r => fmtDate(r['서비스청약일자'])).filter(Boolean);
+  if (!dates.length) return null;
+  const maxDate = dates.slice().sort().pop();
+
+  // 개통 처리된 건도 접수로 카운트 (취소·해지만 제외)
+  const gwangCount = rows.filter(r =>
+    (r['진행상태'] === '접수' || r['진행상태'] === '개통') &&
+    r['요금제상품명'] && String(r['요금제상품명']).includes('광랜') &&
+    fmtDate(r['서비스청약일자']) === maxDate
+  ).length;
+
+  return { gwangCount, maxDate };
+}
+
+// ── 접수파일 유형별 진행상태 집계 ──
+function aggregateJeopsuStatus(rows, fileName) {
+  const out = { file_name: fileName };
+  TYPES.forEach(t => out[t] = { total: 0, statusMap: {} });
+  rows.forEach(r => {
+    const t = classifyRow(r['요금제상품명']);
+    if (!t) return;
+    const s = r['진행상태'] || '_기타';
+    out[t].total++;
+    out[t].statusMap[s] = (out[t].statusMap[s] || 0) + 1;
+  });
+  return out;
+}
+
+// ── T판매관리 유심개통 집계 ──
+// 유심개통 = 단말기판매여부 N + 판매변경이력 '판매 (정상)'.
+// 단, 같은 서비스관리번호에 판매(취소)/판매취소가 혼재하면 최종 상태로 판정:
+//  - 해지여부 Y 또는 취소 후 재판매(할부추가 정상) 없음 → 취소로 보고 제외
+//  - 할부→현금 전환(판매취소 후 할부추가 정상)은 유지로 보고 포함
+function aggregateUsim(rows, fileName) {
+  const hist = v => String(v || '').replace(/\s+/g,'');
+  const svc = {};
+  rows.forEach(r => { const s = r['서비스관리번호']; (svc[s] = svc[s] || []).push(r); });
+  const cands = rows.filter(r => r['단말기판매여부'] === 'N' && hist(r['판매변경이력']) === '판매(정상)');
+  let counted = 0, cancelled = 0;
+  const dateMap = {};
+  cands.forEach(r => {
+    const g = svc[r['서비스관리번호']] || [r];
+    const saleCancel = g.some(x => hist(x['판매변경이력']) === '판매(취소)' || hist(x['판매변경이력']).startsWith('판매취소'));
+    const resold     = g.some(x => hist(x['판매변경이력']) === '할부추가(정상)');
+    const terminated = g.some(x => x['해지여부'] === 'Y');
+    if (terminated || (saleCancel && !resold)) { cancelled++; return; }
+    counted++;
+    const d = fmtDate(r['개통일']);
+    if (d) dateMap[d] = (dateMap[d] || 0) + 1;
+  });
+  return {
+    file_name: fileName, cand: cands.length, counted, cancelled,
+    dateEntries: Object.entries(dateMap).sort((a,b) => a[0].localeCompare(b[0])),
+    updated_at: new Date().toISOString()
+  };
+}
+
+function renderUsim() {
+  const el = document.getElementById('content-유심');
+  const u = _cache['유심'];
+  if (!u) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i data-lucide="smartphone" style="width:22px;height:22px"></i></div>
+        <div class="empty-state-title">유심 데이터가 아직 없습니다</div>
+        <div class="empty-state-desc">위 영역에 T판매관리 엑셀을 업로드하세요</div>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div class="grid-2" style="grid-template-columns:1fr 1.5fr">
+        <div class="sec-side usim-kpis">
+          ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', '단말기 미판매 · 취소/해지 제외')}
+          ${kpiCard('blue',  '판매(정상) 후보', u.cand.toLocaleString(), '건', '단말기판매여부 N')}
+          ${kpiCard('red',   '취소·해지 제외', u.cancelled.toLocaleString(), '건', u.cancelled > 0 ? '서비스관리번호 기준 최종 취소' : '-')}
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">일자별 유심개통 추이</div>
+          <div class="chart-sub">개통일 기준</div>
+          <div id="trend-line-유심"></div>
+        </div>
+      </div>`;
+    renderLine('#trend-line-유심', u.dateEntries);
+  }
+  lucide.createIcons();
+}
+
+// ── 분석 후 업로드 영역을 요약 바로 접기 ──
+function renderUploadSummary() {
+  const el = document.getElementById('upload-summary');
+  const items = [];
+  if (_files['개통']) items.push(`개통 <b>${escHtml(_files['개통'].name)}</b>`);
+  if (_files['접수']) items.push(`접수 <b>${escHtml(_files['접수'].name)}</b>`);
+  if (_files['유심']) items.push(`유심 <b>${escHtml(_files['유심'].name)}</b>`);
+  document.getElementById('drop-wrap').style.display = 'none';
+  document.getElementById('view-tabs').style.display = 'flex';
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="upload-summary-bar">
+      <div class="info-bar-icon"><i data-lucide="file-spreadsheet" style="width:13px;height:13px"></i></div>
+      <div>${items.join(' <span style="color:var(--border)">·</span> ')}</div>
+      <div class="upload-summary-time">${new Date().toLocaleString('ko-KR')}</div>
+      <button class="btn-sa ghost" onclick="showUpload()" style="height:26px;padding:0 10px;font-size:11px">파일 변경</button>
+    </div>`;
+  lucide.createIcons();
+}
+function showTab(t) {
+  ['유선', 'IPTV', '유심'].forEach(k => {
+    document.getElementById('panel-' + k).style.display = k === t ? '' : 'none';
+    document.getElementById('tab-' + k).classList.toggle('on', k === t);
+  });
+}
+function showUpload() {
+  document.getElementById('drop-wrap').style.display = '';
+  document.getElementById('upload-summary').style.display = 'none';
+  document.getElementById('view-tabs').style.display = 'none';
+}
+
+function classifyRow(planName) {
+  if (!planName) return null;
+  const n = String(planName);
+  if (/전화|VoIP|070/i.test(n)) return null;
+  if (/인터넷|광랜|기가/.test(n)) return '유선';
+  if (/스탠다드|이코노미|[Aa]ll|넷플릭스/i.test(n)) return 'IPTV';
+  return null;
+}
+
+function classifySpeed(name) {
+  if (!name) return null;
+  if (name.includes('기가라이트')) return '기가라이트';
+  if (name.includes('광랜'))       return '광랜인터넷';
+  if (name.includes('기가'))       return '기가';
+  return null;
+}
+
+function fmtDate(v) {
+  if (!v) return null;
+  // Excel 시리얼 숫자 → SheetJS 내장 파서로 변환 (timezone 무관)
+  if (typeof v === 'number' && v > 1000) {
+    const p = XLSX.SSF.parse_date_code(v);
+    if (p) return `${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`;
+  }
+  if (v instanceof Date) {
+    return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,'0')}-${String(v.getDate()).padStart(2,'0')}`;
+  }
+  const s = String(v);
+  const m = s.match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  return null;
+}
+
+function pct(n, d) { return d > 0 ? (n/d*100) : 0; }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._to);
+  t._to = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+function aggregate(rows, fileType) {
+  const total = rows.length;
+  const statusMap = {};
+  rows.forEach(r => {
+    const s = r['진행상태'] || '_기타';
+    statusMap[s] = (statusMap[s] || 0) + 1;
+  });
+
+  const planMap = {};
+  rows.forEach(r => {
+    const p = r['요금제상품명'] || '(없음)';
+    const s = r['진행상태'] || '_기타';
+    if (!planMap[p]) planMap[p] = { total:0, byStatus:{} };
+    planMap[p].total++;
+    planMap[p].byStatus[s] = (planMap[p].byStatus[s] || 0) + 1;
+  });
+
+  const speedMap = {};
+  if (fileType === '유선') {
+    rows.forEach(r => {
+      const sp = classifySpeed(r['요금제상품명']);
+      if (!sp) return;
+      if (!speedMap[sp]) speedMap[sp] = { total:0, byStatus:{} };
+      speedMap[sp].total++;
+      const s = r['진행상태'] || '_기타';
+      speedMap[sp].byStatus[s] = (speedMap[sp].byStatus[s] || 0) + 1;
+    });
+  }
+
+  const dateMap = {};
+  rows.forEach(r => {
+    const d = fmtDate(r['서비스청약일자']);
+    if (!d) return;
+    dateMap[d] = (dateMap[d] || 0) + 1;
+  });
+  const dateEntries = Object.entries(dateMap).sort((a,b) => a[0].localeCompare(b[0]));
+
+  const openedDateMap = {};
+  rows.forEach(r => {
+    if (r['진행상태'] !== '개통' && r['진행상태'] !== '접수') return;
+    const d = fmtDate(r['서비스가입일자']) || fmtDate(r['서비스청약일자']) || fmtDate(r['개통해지일자']);
+    if (!d) return;
+    openedDateMap[d] = (openedDateMap[d] || 0) + 1;
+  });
+  const openedDateEntries = Object.entries(openedDateMap).sort((a,b) => a[0].localeCompare(b[0]));
+
+  const shopMap = {};
+  rows.forEach(r => {
+    const s = r['판매처명'] || r['대리점명'] || '(없음)';
+    shopMap[s] = (shopMap[s] || 0) + 1;
+  });
+  const shopRank = Object.entries(shopMap).sort((a,b) => b[1]-a[1]).slice(0,10);
+
+  // 유선 전용 — 개통파일 기준 오늘 날짜 광랜 접수/개통 건수 (로컬 날짜 직접 사용)
+  let gwangTodayRecv = 0, gwangTodayOpen = 0, gwangMaxDate = null;
+  if (fileType === '유선') {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    gwangMaxDate = today;
+    gwangTodayRecv = rows.filter(r =>
+      r['진행상태'] === '접수' &&
+      r['요금제상품명'] && String(r['요금제상품명']).includes('광랜') &&
+      fmtDate(r['서비스청약일자']) === today
+    ).length;
+    gwangTodayOpen = rows.filter(r =>
+      r['진행상태'] === '개통' &&
+      r['요금제상품명'] && String(r['요금제상품명']).includes('광랜') &&
+      fmtDate(r['서비스가입일자']) === today
+    ).length;
+  }
+
+  return { total, statusMap, planMap, speedMap, dateEntries, openedDateEntries, shopRank, gwangTodayRecv, gwangTodayOpen, gwangMaxDate };
+}
+
+// ── 공휴일 / 평일 계산 ──
+const KR_HOLIDAYS = new Set([
+  '2026-01-01','2026-02-16','2026-02-17','2026-02-18','2026-03-01','2026-03-02',
+  '2026-05-05','2026-05-24','2026-05-25','2026-06-03','2026-06-06',
+  '2026-08-15','2026-08-17','2026-09-24','2026-09-25','2026-09-26',
+  '2026-10-03','2026-10-05','2026-10-09','2026-12-25'
+]);
+function _ymd(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function weekdaysLeftInMonth() {
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  let count = 0;
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  while (d <= end) {
+    const wd = d.getDay();
+    if (wd !== 0 && wd !== 6 && !KR_HOLIDAYS.has(_ymd(d))) count++;
+    d.setDate(d.getDate()+1);
+  }
+  return count;
+}
+function weekdaysElapsedInMonth() {
+  // 이번 달 1일 ~ 오늘(포함)까지의 평일 수
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let count = 0;
+  const d = new Date(now.getFullYear(), now.getMonth(), 1);
+  while (d <= end) {
+    const wd = d.getDay();
+    if (wd !== 0 && wd !== 6 && !KR_HOLIDAYS.has(_ymd(d))) count++;
+    d.setDate(d.getDate()+1);
+  }
+  return count;
+}
+function weekdaysAfterTodayInMonth() {
+  // 내일 ~ 말일까지의 평일 수 (오늘 실적은 이미 반영됐다고 보고 제외)
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  let count = 0;
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1);
+  while (d <= end) {
+    const wd = d.getDay();
+    if (wd !== 0 && wd !== 6 && !KR_HOLIDAYS.has(_ymd(d))) count++;
+    d.setDate(d.getDate()+1);
+  }
+  return count;
+}
+function neededForGoal(achieved, total, goalPct) {
+  if (total === 0) return 0;
+  const g = goalPct / 100;
+  if (achieved / total >= g) return 0;
+  return Math.ceil((g * total - achieved) / (1 - g));
+}
+
+const ICON_CAL   = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg>`;
+const ICON_CHECK = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+const ICON_ALERT = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>`;
+
+function renderGoalFooter(achieved, total, goalPct, badCount) {
+  const need = neededForGoal(achieved, total, goalPct);
+  const days = weekdaysLeftInMonth();
+  if (need === 0) {
+    return `<div class="goal-footer done">
+      <span class="goal-footer-icon">${ICON_CHECK}</span>
+      <div>목표 달성 중 · 남은 평일 <b>${days}</b>일간 현 수준 유지</div>
+    </div>`;
+  }
+  if (days === 0) {
+    return `<div class="goal-footer warn">
+      <span class="goal-footer-icon">${ICON_ALERT}</span>
+      <div>남은 평일 없음 · 추가 <b>${need.toLocaleString()}</b>건 필요</div>
+    </div>`;
+  }
+  const totalAll = total + (badCount || 0);
+  const cancelRate = totalAll > 0 ? (badCount || 0) / totalAll : 0;
+  const needRaw = cancelRate < 0.99 ? Math.ceil(need / (1 - cancelRate)) : need;
+  const perDayRaw = Math.ceil(needRaw / days);
+  const cancelPctStr = (cancelRate * 100).toFixed(1);
+  return `<div class="goal-footer">
+    <span class="goal-footer-icon">${ICON_CAL}</span>
+    <div>남은 평일 <b>${days}</b>일 · 하루 <b>${perDayRaw.toLocaleString()}</b>건 · 총 <b>${needRaw.toLocaleString()}</b>건 시도 (취소·해지 ${cancelPctStr}% 감안)</div>
+  </div>`;
+}
+
+function computeGoals(fileType, planMap) {
+  const agg = { total:0, bad:0, gigalite:0, giga:0, gwang:0, standard:0, all:0, etc:0 };
+  Object.entries(planMap).forEach(([name, v]) => {
+    const n = (v.byStatus['개통']||0) + (v.byStatus['접수']||0);
+    const b = (v.byStatus['접수취소']||0) + (v.byStatus['해지']||0);
+    agg.bad += b;
+    agg.total += n;
+    if (fileType === '유선') {
+      if (name.includes('기가라이트')) agg.gigalite += n;
+      else if (name.includes('광랜'))  agg.gwang += n;
+      else if (name.includes('기가'))  agg.giga += n;
+    } else {
+      if (name.includes('스탠다드'))       agg.standard += n;
+      else if (/all/i.test(name))         agg.all += n;
+      else                                 agg.etc += n;
+    }
+  });
+  return agg;
+}
+
+function renderGoals(fileType, planMap) {
+  const a = computeGoals(fileType, planMap);
+  if (fileType === '유선') {
+    const achieved = a.gigalite + a.giga;
+    const rate = a.total > 0 ? achieved/a.total*100 : 0;
+    const goal = 85, hit = rate >= goal;
+    return `
+      <div class="goal-card ${hit ? 'goal-hit' : 'goal-miss'}">
+        <div class="goal-head">
+          <div style="flex:1;min-width:0">
+            <div class="goal-title">초고속 500M 이상</div>
+            <div class="goal-target">목표 ${goal}% · 개통 기준 · 기가라이트+기가</div>
+          </div>
+          <div class="goal-badge ${hit ? 'b-hit' : 'b-miss'}">${hit ? '달성' : '미달'}</div>
+        </div>
+        <div class="goal-main">
+          <div class="goal-percent">${rate.toFixed(1)}<small>%</small></div>
+        </div>
+        <div class="goal-bar-wrap">
+          <div class="goal-bar">
+            <div class="goal-bar-fill" style="width:${Math.min(rate,100).toFixed(1)}%"></div>
+          </div>
+        </div>
+        <div class="goal-detail">
+          <div class="goal-detail-item">기가라이트 <b>${a.gigalite.toLocaleString()}</b></div>
+          <div class="goal-detail-item">기가 <b>${a.giga.toLocaleString()}</b></div>
+          <div class="goal-detail-item">광랜 <b>${a.gwang.toLocaleString()}</b></div>
+          <div class="goal-detail-sum">${achieved.toLocaleString()} / ${a.total.toLocaleString()}</div>
+        </div>
+        ${renderGoalFooter(achieved, a.total, goal, a.bad)}
+      </div>`;
+  }
+  // IPTV — 2개 목표 (sec-cols의 개별 컬럼으로 들어가도록 래퍼 없이 반환)
+  const achieved1 = a.standard + a.all;
+  const rate1 = a.total > 0 ? achieved1/a.total*100 : 0;
+  const goal1 = 90, hit1 = rate1 >= goal1;
+  const rate2 = a.total > 0 ? a.all/a.total*100 : 0;
+  const goal2 = 30, hit2 = rate2 >= goal2;
+  return `
+      <div class="goal-card ${hit1 ? 'goal-hit' : 'goal-miss'}">
+        <div class="goal-head">
+          <div style="flex:1;min-width:0">
+            <div class="goal-title">TV 스탠다드 이상</div>
+            <div class="goal-target">목표 ${goal1}% · 개통 기준 · 스탠다드+ALL</div>
+          </div>
+          <div class="goal-badge ${hit1 ? 'b-hit' : 'b-miss'}">${hit1 ? '달성' : '미달'}</div>
+        </div>
+        <div class="goal-main">
+          <div class="goal-percent">${rate1.toFixed(1)}<small>%</small></div>
+        </div>
+        <div class="goal-bar-wrap">
+          <div class="goal-bar">
+            <div class="goal-bar-fill" style="width:${Math.min(rate1,100).toFixed(1)}%"></div>
+          </div>
+        </div>
+        <div class="goal-detail">
+          <div class="goal-detail-item">스탠다드 <b>${a.standard.toLocaleString()}</b></div>
+          <div class="goal-detail-item">ALL <b>${a.all.toLocaleString()}</b></div>
+          <div class="goal-detail-sum">${achieved1.toLocaleString()} / ${a.total.toLocaleString()}</div>
+        </div>
+        ${renderGoalFooter(achieved1, a.total, goal1, a.bad)}
+      </div>
+      <div class="goal-card ${hit2 ? 'goal-hit' : 'goal-miss'}">
+        <div class="goal-head">
+          <div style="flex:1;min-width:0">
+            <div class="goal-title">TV ALL 이상</div>
+            <div class="goal-target">목표 ${goal2}% · 개통 기준 · ALL만</div>
+          </div>
+          <div class="goal-badge ${hit2 ? 'b-hit' : 'b-miss'}">${hit2 ? '달성' : '미달'}</div>
+        </div>
+        <div class="goal-main">
+          <div class="goal-percent">${rate2.toFixed(1)}<small>%</small></div>
+        </div>
+        <div class="goal-bar-wrap">
+          <div class="goal-bar">
+            <div class="goal-bar-fill" style="width:${Math.min(rate2,100).toFixed(1)}%"></div>
+          </div>
+        </div>
+        <div class="goal-detail">
+          <div class="goal-detail-item">ALL <b>${a.all.toLocaleString()}</b></div>
+          <div class="goal-detail-sum">${a.all.toLocaleString()} / ${a.total.toLocaleString()}</div>
+        </div>
+        ${renderGoalFooter(a.all, a.total, goal2, a.bad)}
+      </div>`;
+}
+
+function renderGwangDetail(planMap, gwangTodayRecv, gwangTodayOpen, gwangMaxDate) {
+  // 접수파일 없으면 렌더링 안 함
+  if (!_cache['접수_gwang']) return '';
+
+  const gwangPlans = Object.entries(planMap).filter(([name]) => name.includes('광랜'));
+  if (!gwangPlans.length) return '';
+
+  const totalOpenedCount = gwangPlans.reduce((s, [, v]) => s + (v.byStatus['개통'] || 0), 0);
+  const jeopsuRecv  = _cache['접수_gwang'].gwangCount;
+  const jeopsuDate  = _cache['접수_gwang'].maxDate;
+
+  return `
+    <div class="gwang-strip">
+      <span class="gwang-strip-badge">광랜</span>
+      <span>당일 접수 <b>${jeopsuRecv.toLocaleString()}</b> <small>(${jeopsuDate || '-'})</small></span>
+      <span>당일 개통 <b>${(gwangTodayOpen||0).toLocaleString()}</b> <small>(${gwangMaxDate || '-'})</small></span>
+      <span>총 개통 <b>${totalOpenedCount.toLocaleString()}</b></span>
+    </div>`;
+}
+
+function render(container, summary, meta, fileType) {
+  const { total, statusMap, planMap, speedMap, dateEntries, openedDateEntries, shopRank, gwangTodayRecv, gwangTodayOpen, gwangMaxDate } = summary;
+  const opened    = statusMap['개통'] || 0;
+  const received  = statusMap['접수'] || 0;
+  const cancelled = statusMap['접수취소'] || 0;
+  const ended     = statusMap['해지'] || 0;
+  const others    = Object.entries(statusMap).reduce((s,[k,v]) =>
+    ['개통','접수','접수취소','해지'].includes(k) ? s : s+v, 0);
+  const uid = fileType;
+
+  // KPI: 접수파일이 있으면 접수기준으로 표시 — 총접수 = 접수+개통(개통완료 포함), 취소·해지도 접수파일 기준
+  const jsAll = _cache['접수현황'];
+  const js = jsAll && jsAll[fileType] && jsAll[fileType].total ? jsAll[fileType] : null;
+  let kpiCards;
+  if (js) {
+    const jm = js.statusMap;
+    const jTotal  = js.total;
+    const jRecv   = (jm['접수']||0) + (jm['개통']||0);
+    const jCancel = jm['접수취소']||0;
+    const jEnd    = jm['해지']||0;
+    const jOthers = jTotal - jRecv - jCancel - jEnd;
+    kpiCards = `
+      ${kpiCard('green', '개통 (개통파일)', opened.toLocaleString(), '건')}
+      ${kpiCard('blue',  '전체 (접수기준)', jTotal.toLocaleString(), '건')}
+      ${kpiCard('blue',  '총접수', jRecv.toLocaleString(), '건', `${pct(jRecv,jTotal).toFixed(1)}% · 개통 ${(jm['개통']||0).toLocaleString()} 포함`)}
+      ${kpiCard('red',   '취소', jCancel.toLocaleString(), '건', `${pct(jCancel,jTotal).toFixed(1)}%`)}
+      ${kpiCard('orange','해지', jEnd.toLocaleString(), '건', `${pct(jEnd,jTotal).toFixed(1)}%`)}
+      ${kpiCard('gray',  '기타', jOthers.toLocaleString(), '건', jOthers>0 ? `${pct(jOthers,jTotal).toFixed(1)}%` : '-')}`;
+  } else {
+    kpiCards = `
+      ${kpiCard('green', '개통', opened.toLocaleString(), '건', `${pct(opened,total).toFixed(1)}%`)}
+      ${kpiCard('blue',  '전체', total.toLocaleString(), '건')}
+      ${kpiCard('blue',  '접수', received.toLocaleString(), '건', `${pct(received,total).toFixed(1)}%`)}
+      ${kpiCard('red',   '취소', cancelled.toLocaleString(), '건', `${pct(cancelled,total).toFixed(1)}%`)}
+      ${kpiCard('orange','해지', ended.toLocaleString(), '건', `${pct(ended,total).toFixed(1)}%`)}
+      ${kpiCard('gray',  '기타', others.toLocaleString(), '건', others>0 ? `${pct(others,total).toFixed(1)}%` : '-')}`;
+  }
+
+  container.innerHTML = `
+    <div class="sec-cols${fileType === 'IPTV' ? ' three' : ''}">
+      ${renderGoals(fileType, planMap)}
+      <div class="sec-side">
+        <div class="grid-3c">${kpiCards}</div>
+        ${renderForecast(opened)}
+        ${fileType === '유선' ? renderGwangDetail(planMap, gwangTodayRecv, gwangTodayOpen, gwangMaxDate) : ''}
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="chart-card">
+        <div class="chart-title">${fileType === '유선' ? '속도별 개통 건수' : '요금제별 개통 건수'}</div>
+        <div class="chart-sub">개통 기준 (취소·해지 제외) · ${(opened+received).toLocaleString()}건</div>
+        <div id="cat-donut-${uid}"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">일자별 개통 추이</div>
+        <div class="chart-sub">청약/가입일자 기준 · 개통</div>
+        <div id="trend-line-${uid}"></div>
+      </div>
+    </div>
+  `;
+
+  const activeCnt = v => (v.byStatus['개통'] || 0) + (v.byStatus['접수'] || 0);
+  const catData = fileType === '유선'
+    ? Object.entries(speedMap).map(([k,v])=>[k,activeCnt(v)]).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({label:k,value:v,color:PALETTE[i%PALETTE.length]}))
+    : Object.entries(planMap).map(([k,v])=>[k,activeCnt(v)]).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({label:k,value:v,color:PALETTE[i%PALETTE.length]}));
+
+  renderDonut(`#cat-donut-${uid}`, catData, '개통');
+  renderLine(`#trend-line-${uid}`, openedDateEntries.length ? openedDateEntries : dateEntries);
+}
+
+// ── 예상 마감수량 (개통 누적 ÷ 경과 평일 = 하루평균 → 말일까지 추정) ──
+function renderForecast(opened) {
+  const elapsed = weekdaysElapsedInMonth();
+  if (!elapsed || !opened) return '';
+  const remain  = weekdaysAfterTodayInMonth();
+  const perDay  = opened / elapsed;
+  const projected = opened + Math.round(perDay * remain);
+  return `
+    <div class="forecast-bar">
+      <div class="forecast-icon"><i data-lucide="trending-up" style="width:16px;height:16px"></i></div>
+      <div>
+        <div class="forecast-label">예상 마감수량 <span style="font-weight:500">(개통 기준)</span></div>
+        <div class="forecast-value">${projected.toLocaleString()}<small>건</small></div>
+      </div>
+      <div class="forecast-detail">
+        <span>현재 개통 <b>${opened.toLocaleString()}</b>건</span>
+        <span>하루평균 <b>${perDay.toFixed(1)}</b>건</span>
+        <span>남은 평일 <b>${remain}</b>일</span>
+      </div>
+    </div>`;
+}
+
+function kpiCard(color, label, value, unit, sub) {
+  return `
+    <div class="kpi k-${color}">
+      <div class="kpi-label">${label}</div>
+      <div class="kpi-value">${value}<small>${unit}</small></div>
+      ${sub ? `<div class="kpi-sub">${sub}</div>` : ''}
+    </div>`;
+}
+
+function renderDonut(sel, data, centerLabel) {
+  const el = document.querySelector(sel);
+  if (!el) return;
+  const total = data.reduce((s,d) => s+d.value, 0) || 1;
+  const size = 150, r = 58, cx = size/2, cy = size/2, sw = 22;
+  const c = 2 * Math.PI * r;
+  let offset = 0;
+  const segs = data.map(d => {
+    const len = (d.value/total) * c;
+    const pctStr = (d.value/total*100).toFixed(1);
+    const seg = `<circle class="donut-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${d.color}" stroke-width="${sw}" stroke-dasharray="${len} ${c-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" data-label="${escHtml(d.label)}" data-val="${d.value}" data-pct="${pctStr}" data-color="${d.color}"/>`;
+    offset += len;
+    return seg;
+  }).join('');
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+        ${segs}
+        <text x="${cx}" y="${cy-3}" text-anchor="middle" font-size="20" font-weight="800" fill="var(--text)">${total.toLocaleString()}</text>
+        <text x="${cx}" y="${cy+14}" text-anchor="middle" font-size="10" fill="var(--text-hint)" font-weight="600">${centerLabel}</text>
+      </svg>
+      <div style="flex:1;min-width:180px">
+        ${data.map(d => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border-light)">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <span style="width:10px;height:10px;border-radius:3px;background:${d.color};flex-shrink:0"></span>
+              <span style="font-size:12px;font-weight:600;color:var(--text)">${d.label}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text-sub);font-variant-numeric:tabular-nums">
+              <span style="font-weight:700;color:var(--text)">${d.value.toLocaleString()}</span>
+              <span style="color:var(--text-hint);margin-left:6px">${(d.value/total*100).toFixed(1)}%</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderLine(sel, entries) {
+  const el = document.querySelector(sel);
+  if (!el) return;
+  if (!entries || !entries.length) {
+    el.innerHTML = '<div style="color:var(--text-hint);font-size:12px;padding:20px 0">일자 데이터 없음</div>';
+    return;
+  }
+  const w = 520, h = 150, pad = { t:14, r:12, b:26, l:32 };
+  const iw = w-pad.l-pad.r, ih = h-pad.t-pad.b;
+  const max = Math.max(...entries.map(e => e[1]));
+  const stepX = entries.length > 1 ? iw/(entries.length-1) : 0;
+  const pts = entries.map((e,i) => [pad.l + i*stepX, pad.t + ih - (e[1]/max)*ih]);
+  const path = pts.map((p,i) => (i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const area = path + ` L${pts[pts.length-1][0].toFixed(1)},${pad.t+ih} L${pts[0][0].toFixed(1)},${pad.t+ih} Z`;
+  const showLabel = i => entries.length <= 8 || i===0 || i===entries.length-1 || i % Math.ceil(entries.length/6) === 0;
+  const uid = 'g' + Math.random().toString(36).slice(2,8);
+  el.innerHTML = `
+    <svg viewBox="0 0 ${w} ${h}" width="100%" style="max-width:100%;height:auto">
+      <defs><linearGradient id="${uid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#4F8EF7" stop-opacity="0.25"/><stop offset="100%" stop-color="#4F8EF7" stop-opacity="0"/></linearGradient></defs>
+      ${[0,0.5,1].map(t => `<line x1="${pad.l}" x2="${pad.l+iw}" y1="${pad.t+ih*t}" y2="${pad.t+ih*t}" stroke="var(--border-light)" stroke-width="1"/>`).join('')}
+      ${[0,0.5,1].map(t => `<text x="${pad.l-6}" y="${pad.t+ih*t+3}" font-size="9" fill="var(--text-hint)" text-anchor="end">${Math.round(max*(1-t))}</text>`).join('')}
+      <path d="${area}" fill="url(#${uid})"/>
+      <path d="${path}" fill="none" stroke="#4F8EF7" stroke-width="2"/>
+      ${pts.map((p,i) => `<circle class="line-dot" cx="${p[0]}" cy="${p[1]}" r="3" fill="#fff" stroke="#4F8EF7" stroke-width="2" data-label="${entries[i][0]}" data-val="${entries[i][1]}"/>`).join('')}
+      ${entries.map((e,i) => showLabel(i) ? `<text x="${pts[i][0]}" y="${h-8}" font-size="9" fill="var(--text-hint)" text-anchor="middle">${e[0].slice(5)}</text>` : '').join('')}
+    </svg>`;
+}
+
+function renderCurrent(fileType) {
+  const el = document.getElementById('content-' + fileType);
+  const row = _cache[fileType];
+  if (!row) {
+    el.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i data-lucide="bar-chart-3" style="width:22px;height:22px"></i></div>
+        <div class="empty-state-title">${fileType} 데이터가 아직 없습니다</div>
+        <div class="empty-state-desc">위 영역에 엑셀 파일을 업로드하세요</div>
+      </div>`;
+  } else {
+    render(el, row.summary, row, fileType);
+  }
+  lucide.createIcons();
+}
+
+function refreshAll() {
+  TYPES.forEach(t => renderCurrent(t));
+  renderUsim();
+  toast('새로고침 완료');
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ── 차트 툴팁 이벤트 ──
+const chartTip = document.getElementById('chart-tip');
+document.addEventListener('mouseover', e => {
+  const el = e.target;
+  if (!el.classList) return;
+  if (el.classList.contains('line-dot')) {
+    const lbl = el.dataset.label, v = el.dataset.val;
+    chartTip.innerHTML = `<div class="tip-label">${lbl}</div><div class="tip-val"><b>${Number(v).toLocaleString()}</b>건</div>`;
+    chartTip.classList.add('show');
+  } else if (el.classList.contains('donut-seg')) {
+    const lbl = el.dataset.label, v = el.dataset.val, p = el.dataset.pct, col = el.dataset.color;
+    chartTip.innerHTML = `<div class="tip-label">${lbl}</div><div class="tip-val"><span style="width:8px;height:8px;border-radius:2px;background:${col};display:inline-block"></span><b>${Number(v).toLocaleString()}</b>건 <span class="tip-pct">${p}%</span></div>`;
+    chartTip.classList.add('show');
+  }
+});
+document.addEventListener('mousemove', e => {
+  if (!chartTip.classList.contains('show')) return;
+  chartTip.style.left = (e.clientX + 12) + 'px';
+  chartTip.style.top  = (e.clientY - 44) + 'px';
+});
+document.addEventListener('mouseout', e => {
+  if (!e.target.classList) return;
+  if (e.target.classList.contains('line-dot') || e.target.classList.contains('donut-seg'))
+    chartTip.classList.remove('show');
+});
+
+// ── 초기 렌더 ──
+TYPES.forEach(t => renderCurrent(t));
+renderUsim();
+lucide.createIcons();
+</script>
+<script>
+// ===== 최상위 탭 전환 =====
+let _svLoaded = false;
+function showMainTab(t) {
+  document.getElementById('main-sales').style.display = t === 'sales' ? '' : 'none';
+  document.getElementById('main-stock').style.display = t === 'stock' ? '' : 'none';
+  document.getElementById('ttab-sales').classList.toggle('on', t === 'sales');
+  document.getElementById('ttab-stock').classList.toggle('on', t === 'stock');
+  if (t === 'stock' && !_svLoaded) { _svLoaded = true; svLoad(); }
+}
+
+// ===== 재고현황 — 재고금액 추이 (본체 Supabase anon 뷰, 재고금액추이.html과 동일 로직) =====
+const svLoad = (() => {
+  const sbv = supabase.createClient('https://duclnvlwvzhwhhglaxwr.supabase.co', 'sb_publishable_wLKHYM62ImdgoT4EvasMag_ikSGtKTO');
+  const $v = id => document.getElementById(id);
+  const fmtN = n => (Number(n) || 0).toLocaleString('ko-KR');
+  const eok = v => { const a = Math.abs(v); if (a >= 1e8) { let s = (v / 1e8).toFixed(a >= 1e9 ? 1 : 2).replace(/\.?0+$/, ''); return s + '억'; } if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return String(Math.round(v)); };
+  const INC = ['재고', '출고중', '숨김', '예약', '훼손'], OUT = ['개통', '이관출고'];
+  const ymdF = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const nice = raw => { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; };
+  let _pts = [];
+  async function load() {
+    $v('sv-note').textContent = '불러오는 중...';
+    const now = new Date(), y = now.getFullYear(), mo = now.getMonth();
+    const monthStart = ymdF(new Date(y, mo, 1));
+    const { data: models, error: e1 } = await sbv.from('stock_trend_models').select('code, price');
+    if (e1) { $v('sv-note').textContent = '모델 로드 실패: ' + e1.message; return; }
+    const priceMap = {}; (models || []).forEach(m => priceMap[m.code] = m.price || 0);
+    let inv = [], from = 0;
+    while (true) {
+      const { data, error } = await sbv.from('stock_trend_inventory').select('model,status,stock_date').range(from, from + 999);
+      if (error) { $v('sv-note').textContent = '재고 로드 실패: ' + error.message; return; }
+      inv = inv.concat(data || []);
+      if (!data || data.length < 1000) break; from += 1000;
+    }
+    const incRows = inv.filter(r => INC.includes(r.status));
+    const cur = incRows.reduce((a, r) => a + (priceMap[r.model] || 0), 0);
+    $v('sv-hero').textContent = fmtN(cur) + '원';
+    $v('sv-hero-sub').textContent = eok(cur) + '원 · ' + incRows.length.toLocaleString() + '대';
+    let snapMap = {}, snapMiss = '';
+    const { data: snaps, error: eS } = await sbv.from('inventory_value_daily').select('snap_date,amount').gte('snap_date', monthStart);
+    if (eS) snapMiss = ' · 스냅샷 테이블 조회 실패'; else (snaps || []).forEach(s => snapMap[s.snap_date] = Number(s.amount));
+    const sinceISO = new Date(y, mo, 1).toISOString();
+    async function fetchEv(col) {
+      let rows = [], f = 0;
+      while (true) {
+        const { data, error } = await sbv.from('stock_trend_events').select('changed_at,old_status,new_status,model,stock_date').gte('changed_at', sinceISO).in(col, OUT).range(f, f + 999);
+        if (error) return { rows, error };
+        rows = rows.concat(data || []);
+        if (!data || data.length < 1000) break; f += 1000;
+      }
+      return { rows };
+    }
+    const a1 = await fetchEv('new_status'), a2 = await fetchEv('old_status');
+    const kd = ts => ymdF(new Date(ts));
+    const leaves = a1.rows.filter(r => INC.includes(r.old_status) && OUT.includes(r.new_status)).map(r => ({ d: kd(r.changed_at), price: priceMap[r.model] || 0, stock: String(r.stock_date || '').slice(0, 10) }));
+    const returns = a2.rows.filter(r => OUT.includes(r.old_status) && INC.includes(r.new_status)).map(r => ({ d: kd(r.changed_at), price: priceMap[r.model] || 0 }));
+    const dayOut = D => { const es = leaves.filter(e => e.d === D); return { cnt: es.length, amt: es.reduce((a, e) => a + e.price, 0) }; };
+    const days = []; for (let i = 1; i < now.getDate(); i++) days.push(ymdF(new Date(y, mo, i)));
+    _pts = days.map(D => {
+      if (snapMap[D] !== undefined) return { d: D, v: snapMap[D], snap: true, out: dayOut(D) };
+      const back = leaves.filter(e => e.d > D && (!e.stock || e.stock <= D)).reduce((a, e) => a + e.price, 0);
+      const ret = returns.filter(e => e.d > D).reduce((a, e) => a + e.price, 0);
+      const notYet = incRows.filter(r => String(r.stock_date || '').slice(0, 10) > D).reduce((a, r) => a + (priceMap[r.model] || 0), 0);
+      return { d: D, v: cur + back - ret - notYet, snap: false, out: dayOut(D) };
+    });
+    $v('sv-cap').textContent = days.length ? `${mo + 1}/1 ~ ${mo + 1}/${now.getDate() - 1} 전일 마감 기준` : '이번달 1일 — 내일부터 추이 표시';
+    const sn = _pts.filter(p => p.snap).length;
+    $v('sv-note').textContent = days.length ? `기록된 마감 ${sn}일 · 역추적 추정 ${_pts.length - sn}일${(a1.error || a2.error) ? ' · 이력 조회 실패' : ''}${snapMiss} — 매일 23:59 자동 기록` : '오늘 밤 23:59부터 매일 마감값이 자동 기록됩니다';
+    draw(_pts);
+  }
+  function draw(pts) {
+    const svg = $v('sv-chart'), wrap = $v('sv-wrap'), tip = $v('sv-tip');
+    if (!pts.length) { svg.style.height = '0'; svg.innerHTML = ''; return; }
+    const W = Math.max(360, Math.round(wrap.clientWidth || 900)), H = 260, padL = 54, padR = 16, padT = 20, padB = 28;
+    let lo = Math.min(...pts.map(p => p.v)), hi = Math.max(...pts.map(p => p.v));
+    if (lo === hi) { lo -= (lo * 0.03 || 1000000); hi += (hi * 0.03 || 1000000); }
+    const padV = (hi - lo) * 0.1; lo -= padV; hi += padV; if (lo < 0) lo = 0;
+    const X = i => pts.length === 1 ? (padL + (W - padL - padR) / 2) : padL + i * (W - padL - padR) / (pts.length - 1);
+    const Y = v => padT + (1 - (v - lo) / (hi - lo)) * (H - padT - padB);
+    const step = nice((hi - lo) / 3);
+    const yT = []; for (let t = Math.ceil(lo / step) * step; t <= hi; t += step) yT.push(t);
+    const xStep = Math.ceil(pts.length / 15);
+    const lineD = pts.map((p, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join('');
+    const areaD = `${lineD}L${X(pts.length - 1).toFixed(1)},${(H - padB).toFixed(1)}L${X(0).toFixed(1)},${(H - padB).toFixed(1)}Z`;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.style.height = H + 'px';
+    svg.innerHTML = `
+      ${yT.map(t => `<line x1="${padL}" x2="${W - padR}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" style="stroke:var(--border);stroke-width:1"/><text x="${padL - 7}" y="${(Y(t) + 3.5).toFixed(1)}" text-anchor="end" style="font-size:10.5px;fill:var(--text-hint)">${eok(t)}</text>`).join('')}
+      <line x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}" style="stroke:var(--border);stroke-width:1"/>
+      ${pts.map((p, i) => { const day = parseInt(p.d.slice(8), 10); return ((day - 1) % xStep === 0) ? `<text x="${X(i).toFixed(1)}" y="${H - padB + 17}" text-anchor="middle" style="font-size:10.5px;fill:var(--text-hint)">${day}일</text>` : ''; }).join('')}
+      <path d="${areaD}" style="fill:var(--primary);opacity:0.07"/>
+      <path d="${lineD}" style="fill:none;stroke:var(--primary);stroke-width:2;stroke-linejoin:round;stroke-linecap:round"/>
+      ${pts.map((p, i) => p.snap ? `<circle cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3" style="fill:var(--primary);stroke:var(--white);stroke-width:1.5"/>` : '').join('')}
+      ${pts.map((p, i) => { const day = parseInt(p.d.slice(8), 10); if ((day - 1) % xStep !== 0) return ''; const lx = Math.min(X(i), W - padR - 15).toFixed(1); return `<circle cx="${X(i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="2.5" style="fill:var(--primary)"/><text x="${lx}" y="${(Y(p.v) - 9).toFixed(1)}" text-anchor="middle" style="font-size:10px;font-weight:700;fill:var(--text-sub)">${eok(p.v)}</text>`; }).join('')}
+      <line id="sv-cross" x1="0" x2="0" y1="${padT}" y2="${H - padB}" style="stroke:var(--text-hint);stroke-width:1;stroke-dasharray:3 3;display:none"/>
+      <circle id="sv-dot" r="4.5" style="fill:var(--primary);stroke:var(--white);stroke-width:2;display:none"/>
+      <rect id="sv-hit" x="${padL - 6}" y="${padT}" width="${W - padL - padR + 12}" height="${H - padT}" style="fill:transparent"/>`;
+    const hit = svg.querySelector('#sv-hit'), cross = svg.querySelector('#sv-cross'), dot = svg.querySelector('#sv-dot');
+    hit.onmousemove = e => {
+      const rect = svg.getBoundingClientRect();
+      const sx = (e.clientX - rect.left) * (W / rect.width);
+      let i = pts.length === 1 ? 0 : Math.round((sx - padL) / ((W - padL - padR) / (pts.length - 1)));
+      i = Math.max(0, Math.min(pts.length - 1, i));
+      const p = pts[i], px = X(i), py = Y(p.v);
+      cross.style.display = ''; cross.setAttribute('x1', px); cross.setAttribute('x2', px);
+      dot.style.display = ''; dot.setAttribute('cx', px); dot.setAttribute('cy', py);
+      const diff = i > 0 ? p.v - pts[i - 1].v : null;
+      tip.style.display = '';
+      tip.innerHTML = `<div style="font-weight:700;margin-bottom:3px">${parseInt(p.d.slice(5, 7), 10)}/${parseInt(p.d.slice(8), 10)} 마감 <span style="font-weight:600;color:${p.snap ? '#9FD8B4' : '#C6CCDC'}">${p.snap ? '기록값' : '역추적 추정'}</span></div><div>재고금액 <b>${fmtN(p.v)}원</b> (${eok(p.v)})</div>${diff !== null ? `<div style="color:${diff < 0 ? '#F5A9AA' : diff > 0 ? '#9FD8B4' : '#AEB2BD'}">전일比 ${diff > 0 ? '+' : ''}${fmtN(diff)}원</div>` : ''}${p.out.cnt ? `<div style="color:#C6CCDC">개통·이관 ${p.out.cnt}대 · -${fmtN(p.out.amt)}원</div>` : ''}`;
+      const left = px / W * rect.width;
+      tip.style.left = Math.min(rect.width - tip.offsetWidth - 4, Math.max(0, left + 12)) + 'px';
+      tip.style.top = Math.max(0, py / H * rect.height - 10) + 'px';
+    };
+    hit.onmouseleave = () => { tip.style.display = 'none'; cross.style.display = 'none'; dot.style.display = 'none'; };
+  }
+  let _rs = null;
+  window.addEventListener('resize', () => { clearTimeout(_rs); _rs = setTimeout(() => { if (_pts.length && document.getElementById('main-stock').style.display !== 'none') draw(_pts); }, 150); });
+  return load;
+})();
+</script>
+</body>
+</html>
