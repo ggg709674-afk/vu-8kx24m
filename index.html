@@ -1416,15 +1416,25 @@ const svLoad = (() => {
       const el = $v('sv-models');
       if (!el) return;
       const maxAmt = Math.max(1, ...rows.map(r => r.amt));
-      const TD = 'padding:10px 14px;border-bottom:1px solid var(--border-light);font-size:13.5px;white-space:nowrap';
+      // 칼럼 간격 균일화 — 실제 텍스트 폭을 재서 컬럼폭 = 내용 최대폭 + 고정 간격
+      const meas = document.createElement('canvas').getContext('2d');
+      const twf = (t, w) => { meas.font = w + " 13.5px 'Pretendard Variable', Pretendard, -apple-system, sans-serif"; return meas.measureText(String(t)).width; };
+      const wModel = Math.max(twf('모델', '600'), twf(`합계 · ${rows.length}개 모델`, '800'), ...rows.map(r => twf(r.m, '700')));
+      const wPrice = Math.max(twf('단가', '600'), ...rows.map(r => twf(r.price ? fmtN(r.price) + '원' : '단가없음', '400')));
+      const wQty = Math.max(twf('수량', '600'), twf(incRows.length.toLocaleString() + '대', '800'), ...rows.map(r => twf(r.q.toLocaleString() + '대', '600')));
+      const wAmt = Math.max(twf('재고금액', '600'), twf(fmtN(cur) + '원', '800'), ...rows.map(r => twf(r.amt ? fmtN(r.amt) + '원' : '-', '700')));
+      const PADW = 28, GAPW = 48;
+      el.style.tableLayout = 'fixed';
+      const colgroup = `<colgroup><col style="width:${Math.ceil(wModel + PADW)}px"><col style="width:${Math.ceil(wPrice + PADW + GAPW)}px"><col style="width:${Math.ceil(wQty + PADW + GAPW)}px"><col style="width:${Math.ceil(wAmt + PADW + GAPW)}px"><col></colgroup>`;
+      const TD = 'padding:10px 14px;border-bottom:1px solid var(--border-light);font-size:13.5px;white-space:nowrap;overflow:hidden';
       const TH = 'padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;white-space:nowrap';
-      el.innerHTML = `
+      el.innerHTML = `${colgroup}
         <thead><tr style="color:var(--text-hint)">
-          <th style="text-align:left;${TH};width:13%">모델</th>
-          <th style="text-align:right;${TH};width:13%">단가</th>
-          <th style="text-align:right;${TH};width:10%">수량</th>
-          <th style="text-align:right;${TH};width:14%">재고금액</th>
-          <th style="padding:9px 14px;border-bottom:1px solid var(--border);width:50%"></th>
+          <th style="text-align:left;${TH}">모델</th>
+          <th style="text-align:right;${TH}">단가</th>
+          <th style="text-align:right;${TH}">수량</th>
+          <th style="text-align:right;${TH}">재고금액</th>
+          <th style="padding:9px 14px;border-bottom:1px solid var(--border)"></th>
         </tr></thead>
         <tbody>${rows.map(r => `<tr>
           <td style="${TD};font-weight:700">${escM(r.m)}</td>
