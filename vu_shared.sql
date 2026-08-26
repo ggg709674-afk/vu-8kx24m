@@ -10,3 +10,5 @@ create policy vu_shared_all on public.vu_shared
   for all to anon, authenticated
   using (true) with check (true);
 notify pgrst, 'reload schema';
+grant select, insert, update, delete on public.vu_shared to anon, authenticated;
+notify pgrst, ' reload schema';
