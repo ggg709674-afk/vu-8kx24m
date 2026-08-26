@@ -37,11 +37,17 @@
 *, body * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s, border-color 0.2s, color 0.15s; }
 body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; letter-spacing: -0.015em; -webkit-font-smoothing: antialiased; }
 
-/* ── 최상위 탭 (유선/유심 · 재고현황) ── */
-.top-tabs { display:flex; gap:8px; margin-bottom:16px; }
-.top-tab { display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border-radius:10px; border:1px solid var(--border); background:var(--white); font:inherit; font-size:14px; font-weight:700; color:var(--text-hint); cursor:pointer; box-shadow:var(--shadow); }
-.top-tab:hover { color:var(--text); border-color:var(--text-hint); }
-.top-tab.on { background:var(--primary); border-color:var(--primary); color:#fff; }
+/* ── 최상단 메뉴바 ── */
+.topbar { position:sticky; top:0; z-index:60; background:var(--white); border-bottom:1px solid var(--border); box-shadow:var(--shadow); }
+.topbar-in { max-width:1400px; margin:0 auto; padding:0 24px; display:flex; align-items:center; gap:22px; height:54px; }
+.topbar .brand { font-size:15px; font-weight:800; letter-spacing:-0.02em; display:flex; align-items:center; gap:8px; color:var(--text); white-space:nowrap; }
+.topbar .brand span { color:var(--primary); }
+.topbar .brand svg, .topbar .brand i { color:var(--primary); }
+.topnav { display:flex; gap:2px; height:100%; align-self:stretch; }
+.topnav button { position:relative; font:inherit; font-size:13.5px; font-weight:600; color:var(--text-hint); background:none; border:none; padding:0 16px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+.topnav button:hover { color:var(--text); }
+.topnav button.on { color:var(--primary); font-weight:700; }
+.topnav button.on::after { content:''; position:absolute; left:12px; right:12px; bottom:0; height:2.5px; border-radius:3px 3px 0 0; background:var(--primary); }
 
 /* ── 탭 ── */
 .tabs { display:flex; gap:4px; margin:20px 0 14px; border-bottom:1px solid var(--border); }
@@ -253,6 +259,17 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 </head>
 <body>
 
+<!-- ── 최상단 메뉴 ── -->
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><i data-lucide="globe" style="width:17px;height:17px"></i> 우주<span>커넥트</span></div>
+    <div class="topnav">
+      <button class="on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> T유선 벨류업 · UIT</button>
+      <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 단말 재고현황</button>
+    </div>
+  </div>
+</div>
+
 <div class="sa-wrap">
 
   <!-- ── 헤더 ── -->
@@ -300,12 +317,6 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- ── 최상위 탭: 유선/유심 · 재고현황 ── -->
-  <div class="top-tabs">
-    <button class="top-tab on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> 유선/유심</button>
-    <button class="top-tab" id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 재고현황</button>
   </div>
 
   <div id="main-sales">
