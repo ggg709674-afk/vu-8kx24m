@@ -926,6 +926,8 @@ function comboKind(r) {
 }
 
 function aggregateCombo(rows) {
+  // 고객번호가 전혀 없으면(예전 저장 데이터 복원분) 묶음 계산 불가 → 안내 표시용
+  if (!rows.some(r => r['고객번호'] != null && String(r['고객번호']).trim())) return { stale: true };
   const cust = {};
   rows.forEach(r => {
     const st = r['진행상태'];
@@ -989,6 +991,19 @@ function renderComboSection() {
   const recv = _cache['결합접수'], open = _cache['결합개통'];
   if (!recv && !open) { sec.style.display = 'none'; el.innerHTML = ''; return; }
   sec.style.display = '';
+  if ((recv && recv.stale) || (open && open.stale)) {
+    el.innerHTML = `<div class="combo-card" style="margin-bottom:14px;display:flex;align-items:center;gap:12px">
+      <div style="width:34px;height:34px;border-radius:9px;background:var(--orange-bg);color:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>
+      </div>
+      <div style="font-size:12px;color:var(--text-sub);line-height:1.5">
+        예전에 저장된 데이터라 결합 현황을 계산할 수 없어요.<br>
+        <b style="color:var(--text)">개통·접수 엑셀을 다시 업로드하면</b> 인터넷만 / 인터넷+TV / TV만 현황이 표시됩니다.
+      </div>
+    </div>`;
+    lucide.createIcons();
+    return;
+  }
   const cards = [];
   if (recv) cards.push(comboCard('접수 기준', recv, '접수파일 (접수+개통)'));
   if (open) cards.push(comboCard('개통 기준', open, '개통파일'));
