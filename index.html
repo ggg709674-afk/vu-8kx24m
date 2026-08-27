@@ -509,12 +509,23 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 
   <!-- ── 탭 전환 (유선 / IPTV / 유심) ── -->
   <div class="tabs" id="view-tabs" style="display:none">
-    <button class="tab on" id="tab-유선" onclick="showTab('유선')"><i data-lucide="wifi" style="width:13px;height:13px"></i> 유선 판매내역</button>
-    <button class="tab" id="tab-IPTV" onclick="showTab('IPTV')"><i data-lucide="tv" style="width:13px;height:13px"></i> IPTV 판매내역</button>
+    <button class="tab on" id="tab-유선" onclick="showTab('유선')"><i data-lucide="wifi" style="width:13px;height:13px"></i> 유선벨류업</button>
     <button class="tab" id="tab-유심" onclick="showTab('유심')"><i data-lucide="smartphone" style="width:13px;height:13px"></i> 유심 개통</button>
   </div>
-  <div class="tab-panel" id="panel-유선"><div id="content-유선"></div></div>
-  <div class="tab-panel" id="panel-IPTV" style="display:none"><div id="content-IPTV"></div></div>
+  <div class="tab-panel" id="panel-유선">
+    <div class="section-head">
+      <span class="section-badge wired"><i data-lucide="wifi" style="width:12px;height:12px"></i> 유선</span>
+      <div class="section-title">유선 판매내역</div>
+      <div class="section-line"></div>
+    </div>
+    <div id="content-유선"></div>
+    <div class="section-head">
+      <span class="section-badge iptv"><i data-lucide="tv" style="width:12px;height:12px"></i> IPTV</span>
+      <div class="section-title">IPTV 판매내역</div>
+      <div class="section-line"></div>
+    </div>
+    <div id="content-IPTV"></div>
+  </div>
   <div class="tab-panel" id="panel-유심" style="display:none"><div id="content-유심"></div></div>
   </div><!-- /main-sales -->
 
@@ -878,7 +889,7 @@ function renderUploadSummary() {
   lucide.createIcons();
 }
 function showTab(t) {
-  ['유선', 'IPTV', '유심'].forEach(k => {
+  ['유선', '유심'].forEach(k => {
     document.getElementById('panel-' + k).style.display = k === t ? '' : 'none';
     document.getElementById('tab-' + k).classList.toggle('on', k === t);
   });
