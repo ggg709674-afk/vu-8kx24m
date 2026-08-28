@@ -87,6 +87,11 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 .mg-tbl td.neg { color:var(--red); }
 .mg-tbl tbody tr:hover td { background:var(--primary-light); }
 .mg-tbl tfoot td { background:var(--primary-light); font-weight:800; color:var(--primary); border-top:2px solid var(--primary); }
+.mg-hprow:hover td { background:var(--primary-light); }
+.mg-det { margin:0; font-size:12px; box-shadow:none; }
+.mg-det thead th { background:#5B6B8C; position:static; font-size:11px; padding:6px 10px; }
+.mg-det td, .mg-det th { border-bottom:1px solid #E4E8EF; }
+.mg-det tbody tr:hover td { background:#EEF2F8; }
 
 /* ── 레이아웃 ── */
 .sa-wrap { max-width: 1400px; margin: 0 auto; padding: 20px 24px 40px; }
@@ -962,14 +967,49 @@ async function mgLoadShared(){
     mgRenderShared(data.data);
   }catch(e){ res.innerHTML='<div style="padding:16px;color:var(--red)">불러오기 오류: '+mgEsc(e.message)+'</div>'; }
 }
+let mgShared=null;
 function mgRenderShared(d){
-  const won=n=>Number(n||0).toLocaleString(), rows=d.rows||[];
-  let h='<div style="font-size:12px;color:var(--text-sub);margin-bottom:8px"><b>'+mgEsc(d.dealer||'')+'</b> · '+mgEsc(d.period||'')+' · 갱신 '+mgEsc(d.updated||'')+' · <span style="color:var(--text-hint)">마진 = 상부(정산금액) − 전체(약정+번들)</span></div>';
-  h+='<div style="overflow:auto"><table class="mg-tbl"><thead><tr><th>협력점</th><th>건수</th><th>상부 정산금액</th><th>전체 약정+번들</th><th>마진</th><th>평균마진</th></tr></thead><tbody>';
-  for(const r of rows){ const neg=r.margin<0; h+='<tr><td class=l>'+mgEsc(r.hp)+'</td><td>'+r.cnt+'</td><td class=n>'+won(r.sangbu)+'</td><td class=n>'+won(r.jeonche)+'</td><td class="n b '+(neg?'neg':'pos')+'">'+won(r.margin)+'</td><td class="n '+(neg?'neg':'')+'">'+won(r.avg)+'</td></tr>'; }
+  mgShared=d;
+  const won=n=>Number(n||0).toLocaleString(), rows=d.rows||[], cats=d.cats||['인터넷','TV','전화','기타'];
+  let h='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">';
+  h+='<div style="font-size:12px;color:var(--text-sub)"><b>'+mgEsc(d.dealer||'')+'</b> · '+mgEsc(d.period||'')+' · 갱신 '+mgEsc(d.updated||'')+'</div>';
+  h+='<button class="btn-sa" onclick="mgExcel()"><i data-lucide="download" style="width:13px;height:13px"></i> 엑셀 다운로드</button></div>';
+  h+='<div style="font-size:11px;color:var(--text-hint);margin-bottom:6px">협력점 클릭 → 고객별 상세 · 마진 = 상부(정산금액) − (약정금액 + 번들수수료)</div>';
+  h+='<div style="overflow:auto"><table class="mg-tbl"><thead><tr><th>협력점</th><th>건수</th><th>상부 정산금액</th><th>약정금액</th><th>번들수수료</th><th>마진</th><th>평균마진</th></tr></thead><tbody>';
+  rows.forEach((r,idx)=>{ const neg=r.margin<0;
+    h+='<tr class=mg-hprow style="cursor:pointer" onclick="mgToggle('+idx+')"><td class=l>▸ '+mgEsc(r.hp)+'</td><td>'+r.cnt+'</td><td class=n>'+won(r.sangbu)+'</td><td class=n>'+won(r.yakjeong)+'</td><td class=n>'+won(r.bundle)+'</td><td class="n b '+(neg?'neg':'pos')+'">'+won(r.margin)+'</td><td class="n '+(neg?'neg':'')+'">'+won(r.avg)+'</td></tr>';
+    h+='<tr class=mg-detrow id="mgdet-'+idx+'" style="display:none"><td colspan=7 style="padding:0;background:#F7F9FC">'+mgDetailHtml(d.detail[r.hp]||[],cats)+'</td></tr>';
+  });
   const t=d.total||{};
-  h+='</tbody><tfoot><tr><td class=l>합계 ('+rows.length+'곳)</td><td>'+won(t.cnt)+'</td><td class=n>'+won(t.sangbu)+'</td><td class=n>'+won(t.jeonche)+'</td><td class="n b">'+won(t.margin)+'</td><td class=n>'+won(t.cnt?Math.round(t.margin/t.cnt):0)+'</td></tr></tfoot></table></div>';
+  h+='</tbody><tfoot><tr><td class=l>합계 ('+rows.length+'곳)</td><td>'+won(t.cnt)+'</td><td class=n>'+won(t.sangbu)+'</td><td class=n>'+won(t.yakjeong)+'</td><td class=n>'+won(t.bundle)+'</td><td class="n b">'+won(t.margin)+'</td><td class=n>'+won(t.cnt?Math.round(t.margin/t.cnt):0)+'</td></tr></tfoot></table></div>';
   document.getElementById('mg-result').innerHTML=h;
+  if(window.lucide) lucide.createIcons();
+}
+function mgToggle(i){ const el=document.getElementById('mgdet-'+i); if(el) el.style.display=el.style.display==='none'?'':'none'; }
+function mgDetailHtml(custs,cats){
+  const won=n=>Number(n||0).toLocaleString();
+  let h='<table class="mg-tbl mg-det"><thead><tr><th>고객명</th>';
+  cats.forEach(c=>h+='<th>'+mgEsc(c)+'</th>');
+  h+='<th>상부 정산금액</th><th>약정금액</th><th>번들수수료</th><th>마진</th></tr></thead><tbody>';
+  for(const c of custs){ h+='<tr><td class=l>'+mgEsc(c.cust)+'</td>';
+    cats.forEach(cat=>{ const m=c.prods?c.prods[cat]:null; h+='<td class="n '+(m!=null&&m<0?'neg':'')+'">'+(m!=null?won(m):'')+'</td>'; });
+    h+='<td class=n>'+won(c.sangbu)+'</td><td class=n>'+won(c.yakjeong)+'</td><td class=n>'+won(c.bundle)+'</td><td class="n b '+(c.margin<0?'neg':'pos')+'">'+won(c.margin)+'</td></tr>';
+  }
+  return h+'</tbody></table>';
+}
+function mgExcel(){
+  if(!mgShared) return;
+  const d=mgShared, cats=d.cats||[];
+  let h='<meta charset="utf-8"><table border="1"><tr><th>협력점</th><th>건수</th><th>상부정산금액</th><th>약정금액</th><th>번들수수료</th><th>마진</th><th>평균마진</th></tr>';
+  d.rows.forEach(r=>{ h+='<tr><td>'+mgEsc(r.hp)+'</td><td>'+r.cnt+'</td><td>'+r.sangbu+'</td><td>'+r.yakjeong+'</td><td>'+r.bundle+'</td><td>'+r.margin+'</td><td>'+r.avg+'</td></tr>'; });
+  h+='</table><br><table border="1"><tr><th>협력점</th><th>고객명</th>';
+  cats.forEach(c=>h+='<th>'+mgEsc(c)+'</th>'); h+='<th>상부정산금액</th><th>약정금액</th><th>번들수수료</th><th>마진</th></tr>';
+  d.rows.forEach(r=>{ (d.detail[r.hp]||[]).forEach(c=>{ h+='<tr><td>'+mgEsc(r.hp)+'</td><td>'+mgEsc(c.cust)+'</td>';
+    cats.forEach(cat=>h+='<td>'+(c.prods&&c.prods[cat]!=null?c.prods[cat]:'')+'</td>');
+    h+='<td>'+c.sangbu+'</td><td>'+c.yakjeong+'</td><td>'+c.bundle+'</td><td>'+c.margin+'</td></tr>'; }); });
+  h+='</table>';
+  const blob=new Blob(['﻿'+h],{type:'application/vnd.ms-excel;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a'); a.href=url; a.download='협력점별_정산마진.xls'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function mgEsc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function mgParse(html){
