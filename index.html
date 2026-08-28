@@ -222,6 +222,11 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 .forecast-detail { margin-left:auto; font-size:12px; color:var(--text-sub); display:flex; align-items:center; gap:6px 14px; flex-wrap:wrap; }
 .forecast-detail b { color:var(--text); font-variant-numeric:tabular-nums; }
 
+/* ── 모델별 재고 정렬 버튼 ── */
+.sv-sort-btn { font:inherit; font-size:12px; font-weight:600; padding:5px 12px; border-radius:8px; border:1px solid var(--border); background:var(--white); color:var(--text-sub); cursor:pointer; transition:all .13s; }
+.sv-sort-btn:hover { border-color:var(--primary); color:var(--primary); }
+.sv-sort-btn.on { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:700; }
+
 /* ── 결합 판매현황 ── */
 .section-badge.combo { background:var(--orange-bg); color:var(--orange); }
 .combo-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
@@ -546,9 +551,13 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
     </div>
 
     <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px;margin-top:14px">
-      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
         <b style="font-size:18px;letter-spacing:-0.02em">모델별 재고</b>
-        <span style="font-size:12.5px;color:var(--text-hint)">색상 구분 없음 · 모델관리 순서</span>
+        <div id="sv-sort" style="display:flex;gap:4px;margin-left:auto">
+          <button class="sv-sort-btn on" data-k="base" onclick="svSetSort('base')">기본</button>
+          <button class="sv-sort-btn" data-k="qty" onclick="svSetSort('qty')">수량</button>
+          <button class="sv-sort-btn" data-k="amt" onclick="svSetSort('amt')">재고금액</button>
+        </div>
       </div>
       <div id="sv-models-wrap">
         <table style="width:100%;border-collapse:collapse;font-size:12.5px" id="sv-models"></table>
@@ -1588,6 +1597,38 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 // ===== 재고현황 — 재고금액 추이 (본체 Supabase anon 뷰, 재고금액추이.html과 동일 로직) =====
+// 모델코드 → 한글 표시명 (woozoo model_mapping 스냅샷 · 없는 코드는 코드 그대로 표시)
+const SV_NAMES = {
+  A165:'갤럭시 A16 128G', A175:'갤럭시 A17 128G', A175_ZEM:'갤럭시 A17 ZEM', A566:'갤럭시 퀀텀6 128G',
+  F761_256:'갤럭시 Z 플립7 FE 256G', F766_256:'갤럭시 Z 플립7 256G', F766_512:'갤럭시 Z 플립7 512G',
+  F776_256:'갤럭시 Z 플립8 256G', F776_512:'갤럭시 Z 플립8 512G',
+  F966_256:'갤럭시 Z 폴드7 256G', F966_512:'갤럭시 Z 폴드7 512G', F966_1T:'갤럭시 Z 폴드7 1T',
+  F971_256:'갤럭시 Z 폴드8 256G', F971_512:'갤럭시 Z 폴드8 512G', F971_1T:'갤럭시 Z 폴드8 1T',
+  F976_256:'갤럭시 Z 폴드8 울트라 256G', F976_512:'갤럭시 Z 폴드8 울트라 512G', F976_1T:'갤럭시 Z 폴드8 울트라 1T',
+  IP13_128:'iPhone 13 128G', IP15_128:'iPhone 15 128G',
+  IP16_128:'iPhone 16 128G', IP16_256:'iPhone 16 256G', IP16P_128:'iPhone 16 Pro 128G', IP16P_256:'iPhone 16 Pro 256G',
+  IP16PM_256:'iPhone 16 Pro Max 256G', IP16e_128:'iPhone 16e 128G', IP16e_256:'iPhone 16e 256G', IP16e_512:'iPhone 16e 512G',
+  IP17_256:'iPhone 17 256G', IP17_512:'iPhone 17 512G', IP17P_256:'iPhone 17 Pro 256G', IP17P_512:'iPhone 17 Pro 512G',
+  IP17P_1TB:'iPhone 17 Pro 1T', IP17PM_256:'iPhone 17 Pro Max 256G', IP17PM_512:'iPhone 17 Pro Max 512G',
+  IP17PM_1T:'iPhone 17 Pro Max 1T', IP17PM_2TB:'iPhone 17 Pro Max 2T', IP17e_256:'iPhone 17e 256G', IP17e_512:'iPhone 17e 512G',
+  IPAir_256:'iPhone Air 256G', IPAir_512:'iPhone Air 512G',
+  M166:'갤럭시 와이드8 128G', M176:'갤럭시 와이드9 128G',
+  S731_256:'갤럭시 S25 FE 256G', S921_256:'갤럭시 S24 256G', S926_256:'갤럭시 S24+ 256G', S928_256:'갤럭시 S24 울트라 256G',
+  S931_256:'갤럭시 S25 256G', S931_512:'갤럭시 S25 512G', S936_256:'갤럭시 S25+ 256G', S936_512:'갤럭시 S25+ 512G',
+  S937_256:'갤럭시 S25 엣지 256G', S937_512:'갤럭시 S25 엣지 512G',
+  S938_256:'갤럭시 S25 울트라 256G', S938_512:'갤럭시 S25 울트라 512G', S938_1T:'갤럭시 S25 울트라 1T',
+  S942_256:'갤럭시 S26 256G', S942_512:'갤럭시 S26 512G', S947_256:'갤럭시 S26+ 256G', S947_512:'갤럭시 S26+ 512G',
+  S948_256:'갤럭시 S26 울트라 256G', S948_512:'갤럭시 S26 울트라 512G', S948_1T:'갤럭시 S26 울트라 1T',
+  USIM:'유심', '갤럭시_퀀텀7_128G':'갤럭시 퀀텀7 128G'
+};
+
+// 모델별 재고 정렬 — 기본(모델관리 순서) / 수량 / 재고금액
+window._svSort = 'base';
+function svSetSort(k) {
+  window._svSort = k;
+  document.querySelectorAll('.sv-sort-btn').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+  if (window._svTblRerender) window._svTblRerender();
+}
 const svLoad = (() => {
   const sbv = supabase.createClient('https://duclnvlwvzhwhhglaxwr.supabase.co', 'sb_publishable_wLKHYM62ImdgoT4EvasMag_ikSGtKTO');
   const $v = id => document.getElementById(id);
@@ -1623,13 +1664,17 @@ const svLoad = (() => {
       const escM = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
       const byModel = {};
       incRows.forEach(r => { const k = r.model || '(미지정)'; byModel[k] = (byModel[k] || 0) + 1; });
-      const rows = Object.entries(byModel)
-        .map(([m, q]) => ({ m, q, price: priceMap[m] || 0, amt: q * (priceMap[m] || 0) }))
+      const baseRows = Object.entries(byModel)
+        .map(([m, q]) => ({ m, name: SV_NAMES[m] || m, q, price: priceMap[m] || 0, amt: q * (priceMap[m] || 0) }))
         .sort((a, b) => (ordMap[a.m] ?? 999) - (ordMap[b.m] ?? 999) || b.amt - a.amt);
       const el = $v('sv-models');
       if (!el) return;
-      const maxAmt = Math.max(1, ...rows.map(r => r.amt));
+      const maxAmt = Math.max(1, ...baseRows.map(r => r.amt));
       const _renderSvTbl = () => {
+      const srt = window._svSort || 'base';
+      const rows = srt === 'qty' ? [...baseRows].sort((a, b) => b.q - a.q || b.amt - a.amt)
+                 : srt === 'amt' ? [...baseRows].sort((a, b) => b.amt - a.amt || b.q - a.q)
+                 : baseRows;
       const narrowT = window.innerWidth < 480;
       if (narrowT) {
         // 모바일: 단가·막대 제외 — 모델/수량/재고금액 3열이 화면 꽉 차게
@@ -1638,12 +1683,12 @@ const svLoad = (() => {
         const THm = 'padding:8px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600';
         el.innerHTML = `
           <thead><tr style="color:var(--text-hint)">
-            <th style="text-align:left;${THm};width:30%">모델</th>
-            <th style="text-align:right;${THm};width:24%">수량</th>
-            <th style="text-align:right;${THm};width:46%">재고금액</th>
+            <th style="text-align:left;${THm};width:44%">모델</th>
+            <th style="text-align:right;${THm};width:18%">수량</th>
+            <th style="text-align:right;${THm};width:38%">재고금액</th>
           </tr></thead>
           <tbody>${rows.map(r => `<tr>
-            <td style="${TDm};font-weight:700">${escM(r.m)}</td>
+            <td style="${TDm};font-weight:700;font-size:12.5px">${escM(r.name)}</td>
             <td style="${TDm};text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${r.q.toLocaleString()}대</td>
             <td style="${TDm};text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--primary)">${r.amt ? fmtN(r.amt) + '원' : '-'}</td>
           </tr>`).join('')}</tbody>
@@ -1657,7 +1702,7 @@ const svLoad = (() => {
       // 칼럼 간격 균일화 — 실제 텍스트 폭을 재서 컬럼폭 = 내용 최대폭 + 고정 간격
       const meas = document.createElement('canvas').getContext('2d');
       const twf = (t, w) => { meas.font = w + " 13.5px 'Pretendard Variable', Pretendard, -apple-system, sans-serif"; return meas.measureText(String(t)).width; };
-      const wModel = Math.max(twf('모델', '600'), twf(`합계 · ${rows.length}개 모델`, '800'), ...rows.map(r => twf(r.m, '700')));
+      const wModel = Math.max(twf('모델', '600'), twf(`합계 · ${rows.length}개 모델`, '800'), ...rows.map(r => twf(r.name, '700')));
       const wPrice = Math.max(twf('단가', '600'), ...rows.map(r => twf(r.price ? fmtN(r.price) + '원' : '단가없음', '400')));
       const wQty = Math.max(twf('수량', '600'), twf(incRows.length.toLocaleString() + '대', '800'), ...rows.map(r => twf(r.q.toLocaleString() + '대', '600')));
       const wAmt = Math.max(twf('재고금액', '600'), twf(fmtN(cur) + '원', '800'), ...rows.map(r => twf(r.amt ? fmtN(r.amt) + '원' : '-', '700')));
@@ -1675,7 +1720,7 @@ const svLoad = (() => {
           <th style="padding:9px 14px;border-bottom:1px solid var(--border)"></th>
         </tr></thead>
         <tbody>${rows.map(r => `<tr>
-          <td style="${TD};font-weight:700">${escM(r.m)}</td>
+          <td style="${TD};font-weight:700">${escM(r.name)}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;${r.price ? 'color:var(--text-sub)' : 'color:var(--text-hint)'}">${r.price ? fmtN(r.price) + '원' : '단가없음'}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${r.q.toLocaleString()}대</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--primary)">${r.amt ? fmtN(r.amt) + '원' : '-'}</td>
