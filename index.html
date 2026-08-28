@@ -520,7 +520,9 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
     <div class="settings-card" style="max-width:1180px">
       <div class="settings-head"><b>협력점별 정산마진 (상부 − 전체)</b><button class="settings-x" onclick="closeMargin()">×</button></div>
       <div class="settings-body">
-        <div class="upload-grid" style="margin-bottom:14px">
+        <div id="mg-result"></div>
+        <details style="margin-top:16px"><summary style="cursor:pointer;font-size:12px;color:var(--text-hint);padding:6px 0">다른 상부점/기간 — 엑셀 직접 업로드</summary>
+        <div class="upload-grid" style="margin-bottom:14px;margin-top:10px">
           <div>
             <div class="upload-label"><i data-lucide="file-down" style="width:13px;height:13px"></i> 전체 정산엑셀 <span class="upload-badge-req">필수</span></div>
             <label class="drop-zone" style="cursor:pointer">
@@ -540,8 +542,8 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
             </label>
           </div>
         </div>
-        <div id="mg-note" style="font-size:11.5px;color:var(--text-hint);margin-bottom:10px">전체·상부 정산엑셀 두 개를 올리면 협력점별 마진이 계산됩니다. <b>마진 = 상부(정산금액) − 전체(약정금액 + 번들수수료)</b></div>
-        <div id="mg-result"></div>
+        <div id="mg-note" style="font-size:11.5px;color:var(--text-hint)">전체·상부 정산엑셀 두 개를 올리면 협력점별 마진이 계산됩니다. <b>마진 = 상부(정산금액) − 전체(약정금액 + 번들수수료)</b></div>
+        </details>
       </div>
     </div>
   </div>
@@ -947,8 +949,28 @@ function closeSettings() { document.getElementById('settings-modal').classList.r
 
 // ── 협력점별 정산마진 ──
 let mgData = { a:null, g:null };
-function openMargin(){ document.getElementById('margin-modal').classList.add('on'); if(window.lucide) lucide.createIcons(); }
+function openMargin(){ document.getElementById('margin-modal').classList.add('on'); if(window.lucide) lucide.createIcons(); mgLoadShared(); }
 function closeMargin(){ document.getElementById('margin-modal').classList.remove('on'); }
+async function mgLoadShared(){
+  const res=document.getElementById('mg-result');
+  res.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-hint)">최신 결과 불러오는 중…</div>';
+  try{
+    const sb=window._vuShare;
+    if(!sb){ res.innerHTML='<div style="padding:16px;color:var(--text-hint)">저장된 결과가 없습니다. 아래에서 엑셀을 올리세요.</div>'; return; }
+    const {data,error}=await sb.from('vu_shared').select('data').eq('id','margin').maybeSingle();
+    if(error||!data||!data.data||!data.data.rows){ res.innerHTML='<div style="padding:16px;color:var(--text-hint)">저장된 결과가 없습니다. 아래에서 엑셀을 올리세요.</div>'; return; }
+    mgRenderShared(data.data);
+  }catch(e){ res.innerHTML='<div style="padding:16px;color:var(--red)">불러오기 오류: '+mgEsc(e.message)+'</div>'; }
+}
+function mgRenderShared(d){
+  const won=n=>Number(n||0).toLocaleString(), rows=d.rows||[];
+  let h='<div style="font-size:12px;color:var(--text-sub);margin-bottom:8px"><b>'+mgEsc(d.dealer||'')+'</b> · '+mgEsc(d.period||'')+' · 갱신 '+mgEsc(d.updated||'')+' · <span style="color:var(--text-hint)">마진 = 상부(정산금액) − 전체(약정+번들)</span></div>';
+  h+='<div style="overflow:auto"><table class="mg-tbl"><thead><tr><th>협력점</th><th>건수</th><th>상부 정산금액</th><th>전체 약정+번들</th><th>마진</th><th>평균마진</th></tr></thead><tbody>';
+  for(const r of rows){ const neg=r.margin<0; h+='<tr><td class=l>'+mgEsc(r.hp)+'</td><td>'+r.cnt+'</td><td class=n>'+won(r.sangbu)+'</td><td class=n>'+won(r.jeonche)+'</td><td class="n b '+(neg?'neg':'pos')+'">'+won(r.margin)+'</td><td class="n '+(neg?'neg':'')+'">'+won(r.avg)+'</td></tr>'; }
+  const t=d.total||{};
+  h+='</tbody><tfoot><tr><td class=l>합계 ('+rows.length+'곳)</td><td>'+won(t.cnt)+'</td><td class=n>'+won(t.sangbu)+'</td><td class=n>'+won(t.jeonche)+'</td><td class="n b">'+won(t.margin)+'</td><td class=n>'+won(t.cnt?Math.round(t.margin/t.cnt):0)+'</td></tr></tfoot></table></div>';
+  document.getElementById('mg-result').innerHTML=h;
+}
 function mgEsc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function mgParse(html){
   const clean=s=>s.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\s+/g,' ').trim();
@@ -962,8 +984,8 @@ function mgParse(html){
   const maxc=Math.max(...rows.map(r=>r.length));
   let hpCol=12, best=-1;
   for(let j=0;j<maxc;j++){ let c=0; for(const r of rows.slice(0,120)) if(r[j]&&/^[★■☆●]/.test(r[j])) c++; if(c>best){best=c;hpCol=j;} }  // 협력점=★/■/☆로 시작(상부점은 '2.'로 시작이라 제외)
-  // 협력점 기준 고정 오프셋: 약정금액 +9, 번들수수료 +16, 정산금액 +20
-  const yjCol=hpCol+9, bdCol=hpCol+16, jsCol=hpCol+20;
+  // 협력점 기준 고정 오프셋: 약정금액 +9, 번들수수료 +18(합 18만), 정산금액 +20
+  const yjCol=hpCol+9, bdCol=hpCol+18, jsCol=hpCol+20;
   const money=s=>{ s=(s||'').replace(/,/g,''); return /^-?\d+$/.test(s)?parseInt(s):null; };
   const out=[];
   for(const r of rows){ const js=money(r[jsCol]); if(js===null) continue;
