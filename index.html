@@ -374,8 +374,8 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
     </div>
   </div>
 
-  <!-- ── 6월 벨류업 목표 배너 ── -->
-  <div class="vu-banner">
+  <!-- ── 벨류업 목표 배너 (T벨류업 전용 — UIT에서는 숨김) ── -->
+  <div class="vu-banner" id="vu-goal-banner">
     <div class="vu-banner-head">
       <span class="vu-tag"><i data-lucide="target" style="width:12px;height:12px"></i> 8월 벨류업 목표</span>
       <div class="vu-banner-title">월간 KPI</div>
@@ -1564,6 +1564,7 @@ function showMainTab(t) {
   document.getElementById('ttab-uit').classList.toggle('on', t === 'uit');
   document.getElementById('ttab-stock').classList.toggle('on', t === 'stock');
   if (sales) showTab(t === 'uit' ? '유심' : '유선');
+  document.getElementById('vu-goal-banner').style.display = t === 'uit' ? 'none' : '';
   if (t === 'stock' && !_svLoaded) { _svLoaded = true; svLoad(); }
 }
 
