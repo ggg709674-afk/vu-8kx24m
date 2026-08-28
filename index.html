@@ -351,8 +351,9 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   <div class="topbar-in">
     <div class="brand"><span class="mark"><i data-lucide="orbit"></i></span> 우주<em>커넥트</em></div>
     <div class="topnav">
-      <button class="on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> T유선 벨류업 · UIT</button>
-      <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 단말 재고현황</button>
+      <button class="on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> T벨류업</button>
+      <button id="ttab-uit" onclick="showMainTab('uit')"><i data-lucide="smartphone" style="width:14px;height:14px"></i> UIT</button>
+      <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 재고현황</button>
     </div>
     <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
   </div>
@@ -497,22 +498,17 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
     </div>
   </div>
 
-  <!-- ── 결합 판매현황 (탭 공통) ── -->
-  <div id="combo-section" style="display:none">
-    <div class="section-head">
-      <span class="section-badge combo"><i data-lucide="link-2" style="width:12px;height:12px"></i> 결합</span>
-      <div class="section-title">인터넷 · TV 결합 판매현황</div>
-      <div class="section-line"></div>
-    </div>
-    <div id="content-결합"></div>
-  </div>
-
-  <!-- ── 탭 전환 (유선 / IPTV / 유심) ── -->
-  <div class="tabs" id="view-tabs" style="display:none">
-    <button class="tab on" id="tab-유선" onclick="showTab('유선')"><i data-lucide="wifi" style="width:13px;height:13px"></i> 유선벨류업</button>
-    <button class="tab" id="tab-유심" onclick="showTab('유심')"><i data-lucide="smartphone" style="width:13px;height:13px"></i> 유심 개통</button>
-  </div>
+  <!-- 상단 메뉴에서 T벨류업/UIT 전환 — panel-유선 = T벨류업, panel-유심 = UIT -->
   <div class="tab-panel" id="panel-유선">
+    <!-- ── 결합 판매현황 ── -->
+    <div id="combo-section" style="display:none">
+      <div class="section-head">
+        <span class="section-badge combo"><i data-lucide="link-2" style="width:12px;height:12px"></i> 결합</span>
+        <div class="section-title">인터넷 · TV 결합 판매현황</div>
+        <div class="section-line"></div>
+      </div>
+      <div id="content-결합"></div>
+    </div>
     <div class="section-head">
       <span class="section-badge wired"><i data-lucide="wifi" style="width:12px;height:12px"></i> 유선</span>
       <div class="section-title">유선 판매내역</div>
@@ -876,7 +872,6 @@ function renderUploadSummary() {
   if (_files['접수']) items.push(`접수 <b>${escHtml(_files['접수'].name)}</b>`);
   if (_files['유심']) items.push(`유심 <b>${escHtml(_files['유심'].name)}</b>`);
   document.getElementById('drop-wrap').style.display = 'none';
-  document.getElementById('view-tabs').style.display = 'flex';
   closeSettings();
   el.style.display = '';
   el.innerHTML = `
@@ -891,7 +886,8 @@ function renderUploadSummary() {
 function showTab(t) {
   ['유선', '유심'].forEach(k => {
     document.getElementById('panel-' + k).style.display = k === t ? '' : 'none';
-    document.getElementById('tab-' + k).classList.toggle('on', k === t);
+    const b = document.getElementById('tab-' + k);
+    if (b) b.classList.toggle('on', k === t);
   });
 }
 function openSettings() { showMainTab('sales'); document.getElementById('settings-modal').classList.add('on'); }
@@ -900,7 +896,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSetting
 function showUpload() {
   document.getElementById('drop-wrap').style.display = '';
   document.getElementById('upload-summary').style.display = 'none';
-  document.getElementById('view-tabs').style.display = 'none';
 }
 
 function classifyRow(planName) {
@@ -1562,10 +1557,13 @@ window._vuShare = supabase.createClient('https://qpexfvwrlwkpjyihlnwz.supabase.c
 let _svLoaded = false;
 function showMainTab(t) {
   try { localStorage.setItem('vu_tab', t); } catch (e) {}
-  document.getElementById('main-sales').style.display = t === 'sales' ? '' : 'none';
+  const sales = t === 'sales' || t === 'uit';
+  document.getElementById('main-sales').style.display = sales ? '' : 'none';
   document.getElementById('main-stock').style.display = t === 'stock' ? '' : 'none';
   document.getElementById('ttab-sales').classList.toggle('on', t === 'sales');
+  document.getElementById('ttab-uit').classList.toggle('on', t === 'uit');
   document.getElementById('ttab-stock').classList.toggle('on', t === 'stock');
+  if (sales) showTab(t === 'uit' ? '유심' : '유선');
   if (t === 'stock' && !_svLoaded) { _svLoaded = true; svLoad(); }
 }
 
@@ -1577,11 +1575,15 @@ function toggleDrawer(force) {
   d.classList.toggle('on', open);
 }
 // 모바일: 아래로 스크롤하면 로고 줄 접힘 (메뉴 줄만 상단 고정)
+// 접힘(>110)/펼침(<20) 임계값 분리 — 로고줄(48px)이 접히며 문서 높이가 줄면 scrollY가
+// 되튀어 경계에서 붙었다 떨어졌다 하는 떨림 방지 (간격이 접힘 높이보다 커야 함)
 window.addEventListener('scroll', () => {
   const tb = document.querySelector('.topbar');
   if (!tb) return;
   if (window.innerWidth > 760) { tb.classList.remove('scrolled'); return; }
-  tb.classList.toggle('scrolled', window.scrollY > 40);
+  const y = window.scrollY;
+  if (y > 110) tb.classList.add('scrolled');
+  else if (y < 20) tb.classList.remove('scrolled');
 }, { passive: true });
 
 // ===== 재고현황 — 재고금액 추이 (본체 Supabase anon 뷰, 재고금액추이.html과 동일 로직) =====
