@@ -76,6 +76,18 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 .tab .cnt { font-size:11px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--border-light); color:var(--text-hint); }
 .tab.on .cnt { background:var(--primary-light); color:var(--primary); }
 
+/* ── 정산마진 표 ── */
+.mg-tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+.mg-tbl th, .mg-tbl td { padding:8px 12px; border-bottom:1px solid var(--border-light); white-space:nowrap; text-align:center; }
+.mg-tbl thead th { background:var(--primary); color:#fff; font-weight:700; position:sticky; top:0; }
+.mg-tbl td.l { text-align:left; font-weight:600; }
+.mg-tbl td.n { text-align:right; font-variant-numeric:tabular-nums; }
+.mg-tbl td.b { font-weight:800; }
+.mg-tbl td.pos { color:var(--green); }
+.mg-tbl td.neg { color:var(--red); }
+.mg-tbl tbody tr:hover td { background:var(--primary-light); }
+.mg-tbl tfoot td { background:var(--primary-light); font-weight:800; color:var(--primary); border-top:2px solid var(--primary); }
+
 /* ── 레이아웃 ── */
 .sa-wrap { max-width: 1400px; margin: 0 auto; padding: 20px 24px 40px; }
 .sa-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
@@ -360,7 +372,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       <button id="ttab-uit" onclick="showMainTab('uit')"><i data-lucide="smartphone" style="width:14px;height:14px"></i> UIT</button>
       <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 재고현황</button>
     </div>
-    <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
+    <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" onclick="openMargin()" title="협력점별 정산마진"><i data-lucide="calculator"></i></button><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
   </div>
 </div>
 
@@ -499,6 +511,37 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 
   <!-- 분석 후 업로드 영역 대신 표시되는 요약 바 -->
   <div id="upload-summary" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 협력점별 정산마진 모달 ── -->
+  <div class="settings-modal" id="margin-modal">
+    <div class="settings-card" style="max-width:1180px">
+      <div class="settings-head"><b>협력점별 정산마진 (상부 − 전체)</b><button class="settings-x" onclick="closeMargin()">×</button></div>
+      <div class="settings-body">
+        <div class="upload-grid" style="margin-bottom:14px">
+          <div>
+            <div class="upload-label"><i data-lucide="file-down" style="width:13px;height:13px"></i> 전체 정산엑셀 <span class="upload-badge-req">필수</span></div>
+            <label class="drop-zone" style="cursor:pointer">
+              <div class="drop-icon-sm" id="mg-icon-a"><i data-lucide="upload-cloud" style="width:16px;height:16px"></i></div>
+              <div style="flex:1;min-width:0"><div class="drop-title" id="mg-title-a">전체 정산 엑셀 업로드</div><div class="drop-desc">navergg 전체정산관리 → 엑셀저장</div></div>
+              <span class="btn-sa"><i data-lucide="file-up" style="width:13px;height:13px"></i> 파일 선택</span>
+              <input type="file" id="mg-file-a" accept=".xls,.xlsx" style="display:none" onchange="mgLoad('a',this.files[0])"/>
+            </label>
+          </div>
+          <div>
+            <div class="upload-label"><i data-lucide="file-down" style="width:13px;height:13px"></i> 상부 정산엑셀 <span class="upload-badge-req">필수</span></div>
+            <label class="drop-zone" style="cursor:pointer">
+              <div class="drop-icon-sm" id="mg-icon-g"><i data-lucide="upload-cloud" style="width:16px;height:16px"></i></div>
+              <div style="flex:1;min-width:0"><div class="drop-title" id="mg-title-g">상부 정산 엑셀 업로드</div><div class="drop-desc">navergg 상부정산관리 → 엑셀저장</div></div>
+              <span class="btn-sa"><i data-lucide="file-up" style="width:13px;height:13px"></i> 파일 선택</span>
+              <input type="file" id="mg-file-g" accept=".xls,.xlsx" style="display:none" onchange="mgLoad('g',this.files[0])"/>
+            </label>
+          </div>
+        </div>
+        <div id="mg-note" style="font-size:11.5px;color:var(--text-hint);margin-bottom:10px">전체·상부 정산엑셀 두 개를 올리면 협력점별 마진이 계산됩니다. (마진 = 상부 정산금액 − 전체 정산금액)</div>
+        <div id="mg-result"></div>
       </div>
     </div>
   </div>
@@ -901,6 +944,58 @@ function showTab(t) {
 }
 function openSettings() { showMainTab('sales'); document.getElementById('settings-modal').classList.add('on'); }
 function closeSettings() { document.getElementById('settings-modal').classList.remove('on'); }
+
+// ── 협력점별 정산마진 ──
+let mgData = { a:null, g:null };
+function openMargin(){ document.getElementById('margin-modal').classList.add('on'); if(window.lucide) lucide.createIcons(); }
+function closeMargin(){ document.getElementById('margin-modal').classList.remove('on'); }
+function mgEsc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function mgParse(html){
+  const clean=s=>s.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\s+/g,' ').trim();
+  const rows=[];
+  for(const tr of (html.match(/<tr[\s\S]*?<\/tr>/gi)||[])){
+    const cells=(tr.match(/<t[dh][\s\S]*?<\/t[dh]>/gi)||[]).map(clean);
+    if(cells.length>=33 && /^\d+/.test(cells[0])) rows.push(cells);
+  }
+  if(!rows.length) return null;
+  // 협력점 컬럼 = ★■☆○● 가장 많은 열
+  const maxc=Math.max(...rows.map(r=>r.length));
+  let hpCol=12, best=-1;
+  for(let j=0;j<maxc;j++){ let c=0; for(const r of rows.slice(0,120)) if(r[j]&&/^[★■☆●]/.test(r[j])) c++; if(c>best){best=c;hpCol=j;} }  // 협력점=★/■/☆로 시작(상부점은 '2.'로 시작이라 제외)
+  const stCol=hpCol+20;   // 정산금액 = 협력점+20 (navergg 정산엑셀 고정 오프셋)
+  const money=s=>{ s=(s||'').replace(/,/g,''); return /^-?\d+$/.test(s)?parseInt(s):null; };
+  const out=[];
+  for(const r of rows){ const m=money(r[stCol]); if(m===null) continue; out.push({hp:r[hpCol]||'(미상)',amt:m}); }
+  return out.length?out:null;
+}
+function mgLoad(which,file){
+  if(!file) return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    let data=null; try{ data=mgParse(e.target.result); }catch(err){}
+    if(!data){ toast('❌ 정산 데이터 인식 실패 — 정산엑셀(엑셀저장) 맞는지 확인'); return; }
+    mgData[which]=data;
+    document.getElementById('mg-title-'+which).textContent=(which==='a'?'전체':'상부')+' '+data.length+'건 로드됨';
+    const ic=document.getElementById('mg-icon-'+which); ic.style.background='var(--green-bg)'; ic.style.color='var(--green)';
+    mgRender();
+  };
+  rd.readAsText(file,'euc-kr');
+}
+function mgRender(){
+  const res=document.getElementById('mg-result');
+  if(!mgData.a||!mgData.g){ res.innerHTML=''; return; }
+  const grp=arr=>{ const m={}; for(const o of arr){ (m[o.hp]=m[o.hp]||{sum:0,cnt:0}); m[o.hp].sum+=o.amt; m[o.hp].cnt++; } return m; };
+  const A=grp(mgData.a), G=grp(mgData.g);
+  const keys=[...new Set([...Object.keys(A),...Object.keys(G)])];
+  const rows=keys.map(hp=>{ const g=G[hp]||{sum:0,cnt:0},a=A[hp]||{sum:0,cnt:0}; const cnt=Math.max(g.cnt,a.cnt),mg=g.sum-a.sum; return {hp,cnt,gs:g.sum,as:a.sum,mg,avg:cnt?Math.round(mg/cnt):0}; });
+  rows.sort((x,y)=>y.mg-x.mg);
+  const won=n=>n.toLocaleString(), T=k=>rows.reduce((s,r)=>s+r[k],0);
+  let h='<div style="overflow:auto"><table class="mg-tbl"><thead><tr><th>협력점</th><th>건수</th><th>상부 정산계</th><th>전체 정산계</th><th>마진(상부−전체)</th><th>평균마진</th></tr></thead><tbody>';
+  for(const r of rows){ const neg=r.mg<0; h+='<tr><td class=l>'+mgEsc(r.hp)+'</td><td>'+r.cnt+'</td><td class=n>'+won(r.gs)+'</td><td class=n>'+won(r.as)+'</td><td class="n b '+(neg?'neg':'pos')+'">'+won(r.mg)+'</td><td class="n '+(neg?'neg':'')+'">'+won(r.avg)+'</td></tr>'; }
+  const tc=T('cnt'),tm=T('mg');
+  h+='</tbody><tfoot><tr><td class=l>합계 ('+rows.length+'곳)</td><td>'+tc+'</td><td class=n>'+won(T('gs'))+'</td><td class=n>'+won(T('as'))+'</td><td class="n b">'+won(tm)+'</td><td class=n>'+won(tc?Math.round(tm/tc):0)+'</td></tr></tfoot></table></div>';
+  res.innerHTML=h;
+}
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
 function showUpload() {
   document.getElementById('drop-wrap').style.display = '';
