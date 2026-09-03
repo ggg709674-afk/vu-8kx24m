@@ -2091,6 +2091,17 @@ const svLoad = (() => {
   } catch (e) { console.warn('업로드 데이터 복원 실패', e); }
 })();
 
+// 주기적 자동 새로고침 (리얼타임 대체) — 탭 보일 때 & 모달/잠금 아닐 때만
+setInterval(() => {
+  try {
+    if (document.hidden) return;                                   // 탭 안 보이면 스킵
+    if (document.querySelector('.settings-modal.on')) return;      // 모달 열려있으면 스킵
+    const lk = document.getElementById('vu-lock');
+    if (lk && lk.style.display !== 'none') return;                 // 잠금(비번) 화면이면 스킵
+    location.reload();
+  } catch (e) {}
+}, 10 * 60 * 1000);   // 10분마다
+
 // 로그아웃 — 잠금 해제 기록 삭제 후 잠금 화면으로
 function vuLogout() {
   try { localStorage.removeItem('vu_auth'); } catch (e) {}
