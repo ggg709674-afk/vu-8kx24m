@@ -1909,7 +1909,7 @@ const svLoad = (() => {
       const wDamt = Math.max(twf('재고변동금액', '600'), twf(daTxt(totDamt), '700'), ...rows.map(r => twf(daTxt(r.damt), '700')));
       const PADW = 28, GAPW = 44;
       el.style.tableLayout = 'fixed';
-      const colgroup = `<colgroup><col style="width:${Math.ceil(wModel + PADW)}px"><col style="width:${Math.ceil(wPrice + PADW + GAPW)}px"><col style="width:${Math.ceil(wQty + PADW + GAPW)}px"><col style="width:${Math.ceil(wDq + PADW + GAPW)}px"><col style="width:${Math.ceil(wAmt + PADW + GAPW)}px"><col style="width:${Math.ceil(wDamt + PADW + GAPW)}px"><col></colgroup>`;
+      const colgroup = `<colgroup><col style="width:${Math.ceil(wModel + PADW)}px"><col style="width:${Math.ceil(wPrice + PADW + GAPW)}px"><col style="width:${Math.ceil(wQty + PADW + GAPW)}px"><col style="width:${Math.ceil(wDq + PADW + GAPW)}px"><col style="width:${Math.ceil(wDamt + PADW + GAPW)}px"><col style="width:${Math.ceil(wAmt + PADW + GAPW)}px"><col></colgroup>`;
       const TD = 'padding:10px 14px;border-bottom:1px solid var(--border-light);font-size:13.5px;white-space:nowrap;overflow:hidden';
       const TH = 'padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;white-space:nowrap';
       el.innerHTML = `${colgroup}
@@ -1918,8 +1918,8 @@ const svLoad = (() => {
           <th style="text-align:right;${TH}">단가</th>
           <th style="text-align:right;${TH}">수량</th>
           <th style="text-align:right;${TH}">전일대비</th>
-          <th style="text-align:right;${TH}">재고금액</th>
           <th style="text-align:right;${TH}">재고변동금액</th>
+          <th style="text-align:right;${TH}">재고금액</th>
           <th style="padding:9px 14px;border-bottom:1px solid var(--border)"></th>
         </tr></thead>
         <tbody>${rows.map(r => `<tr>
@@ -1927,8 +1927,8 @@ const svLoad = (() => {
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;${r.price ? 'color:var(--text-sub)' : 'color:var(--text-hint)'}">${r.price ? fmtN(r.price) + '원' : '단가없음'}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${r.q.toLocaleString()}대</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums">${svDq(r.dq)}</td>
-          <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--primary)">${r.amt ? fmtN(r.amt) + '원' : '-'}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums">${svDa(r.damt)}</td>
+          <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--primary)">${r.amt ? fmtN(r.amt) + '원' : '-'}</td>
           <td style="padding:10px 14px;border-bottom:1px solid var(--border-light)">${r.amt ? `<div style="height:14px;border-radius:4px;background:var(--primary);opacity:0.8;width:${Math.max(1.5, r.amt / maxAmt * 100).toFixed(1)}%;min-width:3px"></div>` : ''}</td>
         </tr>`).join('')}</tbody>
         <tfoot><tr style="font-weight:800;font-size:13.5px">
@@ -1936,8 +1936,8 @@ const svLoad = (() => {
           <td style="padding:11px 14px;border-top:2px solid var(--border)"></td>
           <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${incRows.length.toLocaleString()}대</td>
           <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${svDq(totDq)}</td>
-          <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;color:var(--primary);white-space:nowrap">${fmtN(cur)}원</td>
           <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${svDa(totDamt)}</td>
+          <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;color:var(--primary);white-space:nowrap">${fmtN(cur)}원</td>
           <td style="padding:11px 14px;border-top:2px solid var(--border)"></td>
         </tr></tfoot>`;
       };
