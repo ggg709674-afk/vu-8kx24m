@@ -246,6 +246,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 .sv-sort-btn.on { background:var(--primary); border-color:var(--primary); color:#fff; font-weight:700; }
 /* 전일대비 토글: PC는 열로 항상 표시 → 버튼 숨김. 모바일(<480)만 토글 버튼 노출 */
 @media (min-width:480px) { #sv-delta-btn { display:none !important; } }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── 결합 판매현황 ── */
 .section-badge.combo { background:var(--orange-bg); color:var(--orange); }
@@ -381,7 +382,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       <button id="ttab-uit" onclick="showMainTab('uit')"><i data-lucide="smartphone" style="width:14px;height:14px"></i> UIT</button>
       <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 재고현황</button>
     </div>
-    <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" onclick="openMargin()" title="협력점별 정산마진" style="display:none"><i data-lucide="calculator"></i></button><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
+    <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" id="vu-pull-btn" onclick="vuPullNow(this)" title="지금 tkey 최신 데이터 불러오기"><i data-lucide="refresh-cw"></i></button><button class="gear-btn" onclick="openMargin()" title="협력점별 정산마진" style="display:none"><i data-lucide="calculator"></i></button><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
   </div>
 </div>
 
@@ -2155,6 +2156,27 @@ setInterval(() => {
     location.reload();
   } catch (e) {}
 }, 10 * 60 * 1000);   // 10분마다
+
+// 지금 불러오기 — Supabase에 요청 플래그 → 워커가 감지해 즉시 tkey 조회·푸시 → 갱신되면 리로드
+async function vuPullNow(btn) {
+  if (!window._vuShare) { alert('연결 없음'); return; }
+  const reqAt = Date.now();
+  const ic = btn && btn.querySelector('i');
+  if (btn) { btn.disabled = true; if (ic) ic.style.animation = 'spin 1s linear infinite'; }
+  try {
+    await window._vuShare.from('vu_shared').upsert({ id: 'pull_now', data: { at: reqAt }, updated_at: new Date(reqAt).toISOString() });
+  } catch (e) { if (btn) { btn.disabled = false; if (ic) ic.style.animation = ''; } alert('요청 실패: ' + (e.message || e)); return; }
+  toast('최신 데이터를 불러오는 중… (최대 1분)');
+  let n = 0;
+  const timer = setInterval(async () => {
+    n++;
+    try {
+      const { data } = await window._vuShare.from('vu_shared').select('data').eq('id', 'main').maybeSingle();
+      if (data && data.data && new Date(data.data.savedAt).getTime() > reqAt) { clearInterval(timer); location.reload(); return; }
+    } catch (e) {}
+    if (n >= 20) { clearInterval(timer); location.reload(); }   // ~80s 후 강제 리로드
+  }, 4000);
+}
 
 // 로그아웃 — 잠금 해제 기록 삭제 후 잠금 화면으로
 function vuLogout() {
