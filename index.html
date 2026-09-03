@@ -1392,18 +1392,32 @@ function computeGoals(fileType, planMap) {
   return agg;
 }
 
+// 목표값 수정 (Supabase vu_shared id='goals' 공유 저장 → 새로고침 반영)
+async function editGoal(key) {
+  const D = { 유선: 85, tv1: 90, tv2: 30 }, L = { 유선: '초고속 500M 이상', tv1: 'TV 스탠다드 이상', tv2: 'TV ALL 이상' };
+  const cur = (window._vuGoals && window._vuGoals[key]) ?? D[key];
+  const v = prompt(L[key] + ' 목표(%) 입력', cur);
+  if (v === null) return;
+  const n = Math.round(Number(v));
+  if (!Number.isFinite(n) || n < 0 || n > 100) { alert('0~100 사이 숫자를 입력하세요'); return; }
+  window._vuGoals = Object.assign({}, D, window._vuGoals, { [key]: n });
+  try {
+    await window._vuShare.from('vu_shared').upsert({ id: 'goals', data: window._vuGoals, updated_at: new Date().toISOString() });
+  } catch (e) { alert('저장 실패: ' + (e.message || e)); return; }
+  location.reload();
+}
 function renderGoals(fileType, planMap) {
   const a = computeGoals(fileType, planMap);
   if (fileType === '유선') {
     const achieved = a.gigalite + a.giga;
     const rate = a.total > 0 ? achieved/a.total*100 : 0;
-    const goal = 85, hit = rate >= goal;
+    const goal = (window._vuGoals && window._vuGoals.유선) ?? 85, hit = rate >= goal;
     return `
       <div class="goal-card ${hit ? 'goal-hit' : 'goal-miss'}">
         <div class="goal-head">
           <div style="flex:1;min-width:0">
             <div class="goal-title">초고속 500M 이상</div>
-            <div class="goal-target">목표 ${goal}% · 개통 기준 · 기가라이트+기가</div>
+            <div class="goal-target" onclick="editGoal('유선')" style="cursor:pointer" title="클릭해서 목표 수정">목표 ${goal}% ✎ · 개통 기준 · 기가라이트+기가</div>
           </div>
           <div class="goal-badge ${hit ? 'b-hit' : 'b-miss'}">${hit ? '달성' : '미달'}</div>
         </div>
@@ -1427,15 +1441,15 @@ function renderGoals(fileType, planMap) {
   // IPTV — 2개 목표 (sec-cols의 개별 컬럼으로 들어가도록 래퍼 없이 반환)
   const achieved1 = a.standard + a.all;
   const rate1 = a.total > 0 ? achieved1/a.total*100 : 0;
-  const goal1 = 90, hit1 = rate1 >= goal1;
+  const goal1 = (window._vuGoals && window._vuGoals.tv1) ?? 90, hit1 = rate1 >= goal1;
   const rate2 = a.total > 0 ? a.all/a.total*100 : 0;
-  const goal2 = 30, hit2 = rate2 >= goal2;
+  const goal2 = (window._vuGoals && window._vuGoals.tv2) ?? 30, hit2 = rate2 >= goal2;
   return `
       <div class="goal-card ${hit1 ? 'goal-hit' : 'goal-miss'}">
         <div class="goal-head">
           <div style="flex:1;min-width:0">
             <div class="goal-title">TV 스탠다드 이상</div>
-            <div class="goal-target">목표 ${goal1}% · 개통 기준 · 스탠다드+ALL</div>
+            <div class="goal-target" onclick="editGoal('tv1')" style="cursor:pointer" title="클릭해서 목표 수정">목표 ${goal1}% ✎ · 개통 기준 · 스탠다드+ALL</div>
           </div>
           <div class="goal-badge ${hit1 ? 'b-hit' : 'b-miss'}">${hit1 ? '달성' : '미달'}</div>
         </div>
@@ -1458,7 +1472,7 @@ function renderGoals(fileType, planMap) {
         <div class="goal-head">
           <div style="flex:1;min-width:0">
             <div class="goal-title">TV ALL 이상</div>
-            <div class="goal-target">목표 ${goal2}% · 개통 기준 · ALL만</div>
+            <div class="goal-target" onclick="editGoal('tv2')" style="cursor:pointer" title="클릭해서 목표 수정">목표 ${goal2}% ✎ · 개통 기준 · ALL만</div>
           </div>
           <div class="goal-badge ${hit2 ? 'b-hit' : 'b-miss'}">${hit2 ? '달성' : '미달'}</div>
         </div>
@@ -2044,6 +2058,11 @@ const svLoad = (() => {
   let t = 'sales';
   try { t = localStorage.getItem('vu_tab') || 'sales'; } catch (e) {}
   showMainTab(t);
+  // 목표값(KPI) 공유 로드 — 렌더 전에 먼저
+  try {
+    const { data: g } = await window._vuShare.from('vu_shared').select('data').eq('id', 'goals').maybeSingle();
+    if (g && g.data) window._vuGoals = Object.assign({ 유선: 85, tv1: 90, tv2: 30 }, g.data);
+  } catch (e) {}
   // 업로드 데이터 복원 — 온라인(vu_shared) 우선, 실패하면 이 브라우저 저장본
   let d = null;
   try {
