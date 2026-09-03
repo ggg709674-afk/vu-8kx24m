@@ -402,7 +402,8 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   <!-- ── 벨류업 목표 배너 (T벨류업 전용 — UIT에서는 숨김) ── -->
   <div class="vu-banner" id="vu-goal-banner">
     <div class="vu-banner-head">
-      <span class="vu-tag"><i data-lucide="target" style="width:12px;height:12px"></i> 8월 벨류업 목표</span>
+      <span class="vu-tag"><i data-lucide="target" style="width:12px;height:12px"></i> <span id="vu-goal-month">9월</span> 벨류업 목표</span>
+      <script>try{document.getElementById('vu-goal-month').textContent=(new Date().getMonth()+1)+'월';}catch(e){}</script>
       <div class="vu-banner-title">월간 KPI</div>
       <div class="vu-banner-sub">개통 기준 · 진행 현황은 아래 카드 참고</div>
     </div>
