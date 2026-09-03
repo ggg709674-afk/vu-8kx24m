@@ -878,30 +878,35 @@ function aggregateJeopsuStatus(rows, fileName) {
   return out;
 }
 
-// ── T판매관리 유심개통 집계 ──
-// 유심개통 = 단말기판매여부 N + 판매변경이력 '판매 (정상)'.
-// 단, 같은 서비스관리번호에 판매(취소)/판매취소가 혼재하면 최종 상태로 판정:
-//  - 해지여부 Y 또는 취소 후 재판매(할부추가 정상) 없음 → 취소로 보고 제외
-//  - 할부→현금 전환(판매취소 후 할부추가 정상)은 유지로 보고 포함
+// ── T판매관리 유심개통 집계 (서비스관리번호별 최종판정) ──
+// 유심 = 단말기판매여부 N. 서비스관리번호로 그룹핑해 그룹당 최종 상태로 1건 판정:
+//  개통 후보 = 처리구분 '처리완료'+판매변경이력 '판매(정상)'  OR  처리구분 '미처리'+판매변경이력 공백
+//  최종판정: (1) 해지여부 Y → 취소  (2) 취소이력(판매취소·판매(취소)) 있고 재판매(할부추가 정상) 없음 → 취소  (3) 그 외 → 개통
 function aggregateUsim(rows, fileName) {
   const hist = v => String(v || '').replace(/\s+/g,'');
+  const isOpen = r => r['단말기판매여부'] === 'N' &&
+    (hist(r['판매변경이력']) === '판매(정상)' ||
+     (r['처리구분'] === '미처리' && hist(r['판매변경이력']) === ''));
+  // 유심(N) 행만 서비스관리번호별 그룹
   const svc = {};
-  rows.forEach(r => { const s = r['서비스관리번호']; (svc[s] = svc[s] || []).push(r); });
-  const cands = rows.filter(r => r['단말기판매여부'] === 'N' && hist(r['판매변경이력']) === '판매(정상)');
-  let counted = 0, cancelled = 0;
+  rows.forEach(r => { if (r['단말기판매여부'] !== 'N') return; const s = r['서비스관리번호']; (svc[s] = svc[s] || []).push(r); });
+  let cand = 0, counted = 0, cancelled = 0;
   const dateMap = {};
-  cands.forEach(r => {
-    const g = svc[r['서비스관리번호']] || [r];
+  Object.keys(svc).forEach(s => {
+    const g = svc[s];
+    const openRows = g.filter(isOpen);
+    if (!openRows.length) return;            // 개통 후보 없음(처리제외 등) → 스킵
+    cand++;
     const saleCancel = g.some(x => hist(x['판매변경이력']) === '판매(취소)' || hist(x['판매변경이력']).startsWith('판매취소'));
     const resold     = g.some(x => hist(x['판매변경이력']) === '할부추가(정상)');
     const terminated = g.some(x => x['해지여부'] === 'Y');
     if (terminated || (saleCancel && !resold)) { cancelled++; return; }
     counted++;
-    const d = fmtDate(r['개통일']);
+    const d = fmtDate(openRows[0]['개통일']);
     if (d) dateMap[d] = (dateMap[d] || 0) + 1;
   });
   return {
-    file_name: fileName, cand: cands.length, counted, cancelled,
+    file_name: fileName, cand, counted, cancelled,
     dateEntries: Object.entries(dateMap).sort((a,b) => a[0].localeCompare(b[0])),
     updated_at: new Date().toISOString()
   };
@@ -921,8 +926,8 @@ function renderUsim() {
     el.innerHTML = `
       <div class="grid-2" style="grid-template-columns:1fr 1.5fr">
         <div class="sec-side usim-kpis">
-          ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', '단말기 미판매 · 취소/해지 제외')}
-          ${kpiCard('blue',  '판매(정상) 후보', u.cand.toLocaleString(), '건', '단말기판매여부 N')}
+          ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', '단말기 미판매 · 최종 개통')}
+          ${kpiCard('blue',  '개통 후보', u.cand.toLocaleString(), '건', '판매정상+미처리공백')}
           ${kpiCard('red',   '취소·해지 제외', u.cancelled.toLocaleString(), '건', u.cancelled > 0 ? '서비스관리번호 기준 최종 취소' : '-')}
         </div>
         <div class="chart-card">
