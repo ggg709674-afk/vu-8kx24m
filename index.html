@@ -931,8 +931,9 @@ function renderUsim() {
     el.innerHTML = `
       <div class="grid-2" style="grid-template-columns:1fr 1.5fr">
         <div class="sec-side usim-kpis">
-          ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', '단말기 미판매 · 최종 개통')}
-          ${kpiCard('blue',  '개통 후보', u.cand.toLocaleString(), '건', '판매정상+미처리공백')}
+          ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', 'tkey · 단말기 미판매 · 최종 개통')}
+          ${(window._usimReceipt && window._usimReceipt.valid != null) ? kpiCard('blue', '유효접수', Number(window._usimReceipt.valid).toLocaleString(), '건', 'workline 모바일 · 취소 제외') : ''}
+          ${kpiCard('gray',  '개통 후보', u.cand.toLocaleString(), '건', '판매정상+미처리공백')}
           ${kpiCard('red',   '취소·해지 제외', u.cancelled.toLocaleString(), '건', u.cancelled > 0 ? '서비스관리번호 기준 최종 취소' : '-')}
         </div>
         <div class="chart-card">
@@ -1804,13 +1805,17 @@ window.renderSummary = function renderSummary() {
   const sunN = isRc ? recv('유선') : ((_cache['유선'] && _cache['유선'].summary.statusMap['개통']) || 0);
   const tvN  = isRc ? recv('IPTV') : ((_cache['IPTV'] && _cache['IPTV'].summary.statusMap['개통']) || 0);
   html += section(qLabel + ' 수량', numBox('유선 ' + qLabel, won(sunN) + '건') + numBox('IPTV ' + qLabel, won(tvN) + '건') + numBox('합계', won(sunN + tvN) + '건', null, 'var(--primary)'));
-  // ── UIT (유심) — 개통기준만. 목표 150건, 달성 시 건당 5만원 그레이드 총액 ──
+  // ── UIT (유심) — 개통기준=tkey 유심개통+그레이드 / 접수기준=workline 유효접수 ──
   if (!isRc) {
     const u = _cache['유심'];
     const cnt = u ? u.counted : 0, hit = cnt >= UIT_GOAL, grade = cnt * UIT_UNIT;
     html += section('UIT (유심)',
       numBox('유심개통', u ? won(cnt) + '건' : '-', hit ? `목표 ${UIT_GOAL}건 달성` : `목표까지 ${won(Math.max(0, UIT_GOAL - cnt))}건 (${cnt}/${UIT_GOAL})`, hit ? '#10B981' : undefined)
       + numBox('그레이드 총액', hit ? won(grade) + '원' : '미달', hit ? `${won(cnt)}건 × ${won(UIT_UNIT)}원` : `150건 달성 시부터 지급`, hit ? '#10B981' : 'var(--text-hint)'));
+  } else {
+    const r = window._usimReceipt;
+    html += section('UIT (유심)',
+      numBox('유효접수', (r && r.valid != null) ? won(r.valid) + '건' : '-', 'workline 모바일 · 취소 제외', 'var(--primary)'));
   }
   // ── 재고현황 (두 탭 공통) ──
   const sv = window._svSummary;
@@ -2213,6 +2218,7 @@ const svLoad = (() => {
     if (d) {
       ['개통', '접수', '유심'].forEach(k => { if (d.names && d.names[k]) _files[k] = { name: d.names[k] }; });
       window._vuSavedAt = d.savedAt || null;
+      window._usimReceipt = d.usimReceipt || null;   // UIT 유효접수(workline)
       window._vuRestoring = true;
       finishAnalysis(d.rows || [], d.rows2, d.swapped, d.rowsU);
       window._vuRestoring = false;
