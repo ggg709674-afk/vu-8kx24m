@@ -1829,7 +1829,10 @@ const svLoad = (() => {
   async function load() {
     $v('sv-note').textContent = '불러오는 중...';
     const now = new Date(), y = now.getFullYear(), mo = now.getMonth();
-    const monthStart = ymdF(new Date(y, mo, 1));
+    // 최근 한 달(롤링): 한 달 전 +1일 ~ 어제 (예: 오늘 9/3 → 8/4 ~ 9/2)
+    const rollStart = new Date(y, mo - 1, now.getDate() + 1); rollStart.setHours(0, 0, 0, 0);
+    const yest = new Date(y, mo, now.getDate() - 1); yest.setHours(0, 0, 0, 0);
+    const monthStart = ymdF(rollStart);
     let models, e1;
     ({ data: models, error: e1 } = await sbv.from('stock_trend_models').select('code, price, display_order'));
     if (e1 && /display_order/i.test(e1.message || '')) ({ data: models, error: e1 } = await sbv.from('stock_trend_models').select('code, price'));
@@ -1964,7 +1967,7 @@ const svLoad = (() => {
     let snapMap = {}, snapMiss = '';
     const { data: snaps, error: eS } = await sbv.from('inventory_value_daily').select('snap_date,amount').gte('snap_date', monthStart);
     if (eS) snapMiss = ' · 스냅샷 테이블 조회 실패'; else (snaps || []).forEach(s => snapMap[s.snap_date] = Number(s.amount));
-    const sinceISO = new Date(y, mo, 1).toISOString();
+    const sinceISO = rollStart.toISOString();
     async function fetchEv(col) {
       let rows = [], f = 0;
       while (true) {
@@ -1980,7 +1983,7 @@ const svLoad = (() => {
     const leaves = a1.rows.filter(r => INC.includes(r.old_status) && OUT.includes(r.new_status)).map(r => ({ d: kd(r.changed_at), price: priceMap[r.model] || 0, stock: String(r.stock_date || '').slice(0, 10) }));
     const returns = a2.rows.filter(r => OUT.includes(r.old_status) && INC.includes(r.new_status)).map(r => ({ d: kd(r.changed_at), price: priceMap[r.model] || 0 }));
     const dayOut = D => { const es = leaves.filter(e => e.d === D); return { cnt: es.length, amt: es.reduce((a, e) => a + e.price, 0) }; };
-    const days = []; for (let i = 1; i < now.getDate(); i++) days.push(ymdF(new Date(y, mo, i)));
+    const days = []; for (let dt = new Date(rollStart); dt <= yest; dt.setDate(dt.getDate() + 1)) days.push(ymdF(dt));
     _pts = days.map(D => {
       if (snapMap[D] !== undefined) return { d: D, v: snapMap[D], snap: true, out: dayOut(D) };
       const back = leaves.filter(e => e.d > D && (!e.stock || e.stock <= D)).reduce((a, e) => a + e.price, 0);
@@ -1988,7 +1991,7 @@ const svLoad = (() => {
       const notYet = incRows.filter(r => String(r.stock_date || '').slice(0, 10) > D).reduce((a, r) => a + (priceMap[r.model] || 0), 0);
       return { d: D, v: cur + back - ret - notYet, snap: false, out: dayOut(D) };
     });
-    $v('sv-cap').textContent = days.length ? `${mo + 1}/1 ~ ${mo + 1}/${now.getDate() - 1} 전일 마감 기준` : '이번달 1일 — 내일부터 추이 표시';
+    $v('sv-cap').textContent = days.length ? `${rollStart.getMonth() + 1}/${rollStart.getDate()} ~ ${yest.getMonth() + 1}/${yest.getDate()} · 최근 한 달 · 전일 마감 기준` : '내일부터 추이 표시';
     const sn = _pts.filter(p => p.snap).length;
     $v('sv-note').textContent = days.length ? `기록된 마감 ${sn}일 · 역추적 추정 ${_pts.length - sn}일${(a1.error || a2.error) ? ' · 이력 조회 실패' : ''}${snapMiss} — 매일 23:59 자동 기록` : '오늘 밤 23:59부터 매일 마감값이 자동 기록됩니다';
     draw(_pts);
