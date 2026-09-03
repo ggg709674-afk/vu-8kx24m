@@ -933,7 +933,6 @@ function renderUsim() {
         <div class="sec-side usim-kpis">
           ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', 'tkey · 단말기 미판매 · 최종 개통')}
           ${(window._usimReceipt && window._usimReceipt.valid != null) ? kpiCard('blue', '유효접수', Number(window._usimReceipt.valid).toLocaleString(), '건', 'workline 모바일 · 취소 제외') : ''}
-          ${kpiCard('gray',  '개통 후보', u.cand.toLocaleString(), '건', '판매정상+미처리공백')}
           ${kpiCard('red',   '취소·해지 제외', u.cancelled.toLocaleString(), '건', u.cancelled > 0 ? '서비스관리번호 기준 최종 취소' : '-')}
         </div>
         <div class="chart-card">
