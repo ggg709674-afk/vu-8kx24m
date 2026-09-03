@@ -398,8 +398,8 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   <!-- ── 헤더 ── -->
   <div class="sa-head">
     <div>
-      <div class="sa-title">T유선 <span>벨류업</span> 데이터</div>
-      <div class="sa-sub">진행상태 · 요금제 · 판매처 현황을 한눈에</div>
+      <div class="sa-title" id="sa-title">T유선 <span>벨류업</span> 데이터</div>
+      <div class="sa-sub" id="sa-sub">진행상태 · 요금제 · 판매처 현황을 한눈에</div>
     </div>
     <div class="sa-actions">
 
@@ -1862,6 +1862,17 @@ function showMainTab(t) {
   document.getElementById('ttab-uit').classList.toggle('on', t === 'uit');
   document.getElementById('ttab-stock').classList.toggle('on', t === 'stock');
   if (sales) showTab(t === 'uit' ? '유심' : '유선');
+  // 탭별 헤더 제목
+  const TITLES = {
+    summary: ['요약', '핵심 수치 한눈에'],
+    sales:   ['T유선 <span>벨류업</span> 데이터', '진행상태 · 요금제 · 판매처 현황을 한눈에'],
+    uit:     ['UIT', '유심 개통 현황'],
+    stock:   ['재고현황', '모델별 재고금액 추이']
+  };
+  const tt = TITLES[t] || TITLES.sales;
+  const elT = document.getElementById('sa-title'), elS = document.getElementById('sa-sub');
+  if (elT) elT.innerHTML = tt[0];
+  if (elS) elS.textContent = tt[1];
   document.getElementById('vu-goal-banner').style.display = (t === 'uit' || t === 'summary') ? 'none' : '';
   if ((t === 'stock' || t === 'summary') && !_svLoaded) { _svLoaded = true; svLoad(); }
   if (t === 'summary') renderSummary();
