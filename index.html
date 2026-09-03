@@ -1835,11 +1835,12 @@ const svLoad = (() => {
     // ── 전일대비 (오늘 KST 변동): 개통·이관출고 −, 복귀 +, 새 입고 + ──
     const dqMap = {};
     try {
-      const kstD = new Date(Date.now() + 540 * 60000).toISOString().slice(0, 10);
+      const kstD = new Date(Date.now() + 540 * 60000 - 86400000).toISOString().slice(0, 10);   // 전일(어제)
+      const kstEnd = new Date(Date.now() + 540 * 60000).toISOString().slice(0, 10);            // 오늘 00:00까지(어제 하루)
       const INCs = new Set(INC);
       let evs = [], ef = 0;
       while (true) {
-        const { data } = await sbv.from('stock_trend_events').select('old_status,new_status,model').gte('changed_at', kstD + 'T00:00:00+09:00').range(ef, ef + 999);
+        const { data } = await sbv.from('stock_trend_events').select('old_status,new_status,model').gte('changed_at', kstD + 'T00:00:00+09:00').lt('changed_at', kstEnd + 'T00:00:00+09:00').range(ef, ef + 999);
         evs = evs.concat(data || []);
         if (!data || data.length < 1000) break; ef += 1000;
       }
