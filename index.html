@@ -1898,16 +1898,17 @@ const svLoad = (() => {
             <th style="text-align:right;${THm};width:18%">${dmode ? '전일대비' : '수량'}</th>
             <th style="text-align:right;${THm};width:38%">${dmode ? '재고변동' : '재고금액'}</th>
           </tr></thead>
-          <tbody>${rows.map(r => `<tr>
+          <tbody>
+            <tr style="font-weight:800;font-size:13.5px">
+              <td style="padding:10px 8px;border-bottom:2px solid var(--border);white-space:nowrap">합계 · ${rows.length}모델</td>
+              <td style="padding:10px 8px;border-bottom:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${dmode ? svDq(totDq) : totQ.toLocaleString() + '대'}</td>
+              <td style="padding:10px 8px;border-bottom:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;${dmode ? '' : 'color:var(--primary)'};white-space:nowrap">${dmode ? svDa(totDamt) : fmtN(totAmt) + '원'}</td>
+            </tr>
+            ${rows.map(r => `<tr>
             <td style="${TDm};font-weight:700;font-size:12.5px">${escM(r.name)}</td>
             <td style="${TDm};text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${dmode ? svDq(r.dq) : r.q.toLocaleString() + '대'}</td>
             <td style="${TDm};text-align:right;font-variant-numeric:tabular-nums;font-weight:700;${dmode ? '' : 'color:var(--primary)'}">${dmode ? svDa(r.damt) : (r.amt ? fmtN(r.amt) + '원' : '-')}</td>
-          </tr>`).join('')}</tbody>
-          <tfoot><tr style="font-weight:800;font-size:13.5px">
-            <td style="padding:10px 8px;border-top:2px solid var(--border);white-space:nowrap">합계 · ${rows.length}모델</td>
-            <td style="padding:10px 8px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${dmode ? svDq(totDq) : totQ.toLocaleString() + '대'}</td>
-            <td style="padding:10px 8px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;${dmode ? '' : 'color:var(--primary)'};white-space:nowrap">${dmode ? svDa(totDamt) : fmtN(totAmt) + '원'}</td>
-          </tr></tfoot>`;
+          </tr>`).join('')}</tbody>`;
         return;
       }
       // 칼럼 간격 균일화 — 실제 텍스트 폭을 재서 컬럼폭 = 내용 최대폭 + 고정 간격
@@ -1937,7 +1938,17 @@ const svLoad = (() => {
           <th style="text-align:right;${TH}">재고금액</th>
           <th style="padding:9px 14px;border-bottom:1px solid var(--border)"></th>
         </tr></thead>
-        <tbody>${rows.map(r => `<tr>
+        <tbody>
+        <tr style="font-weight:800;font-size:13.5px">
+          <td style="padding:11px 14px;border-bottom:2px solid var(--border);white-space:nowrap">합계 · ${rows.length}개 모델</td>
+          <td style="padding:11px 14px;border-bottom:2px solid var(--border)"></td>
+          <td style="padding:11px 14px;border-bottom:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${incRows.length.toLocaleString()}대</td>
+          <td style="padding:11px 14px;border-bottom:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${svDq(totDq)}</td>
+          <td style="padding:11px 14px;border-bottom:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${svDa(totDamt)}</td>
+          <td style="padding:11px 14px;border-bottom:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;color:var(--primary);white-space:nowrap">${fmtN(cur)}원</td>
+          <td style="padding:11px 14px;border-bottom:2px solid var(--border)"></td>
+        </tr>
+        ${rows.map(r => `<tr>
           <td style="${TD};font-weight:700">${escM(r.name)}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;${r.price ? 'color:var(--text-sub)' : 'color:var(--text-hint)'}">${r.price ? fmtN(r.price) + '원' : '단가없음'}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${r.q.toLocaleString()}대</td>
@@ -1945,16 +1956,7 @@ const svLoad = (() => {
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums">${svDa(r.damt)}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:700;color:var(--primary)">${r.amt ? fmtN(r.amt) + '원' : '-'}</td>
           <td style="padding:10px 14px;border-bottom:1px solid var(--border-light)">${r.amt ? `<div style="height:14px;border-radius:4px;background:var(--primary);opacity:0.8;width:${Math.max(1.5, r.amt / maxAmt * 100).toFixed(1)}%;min-width:3px"></div>` : ''}</td>
-        </tr>`).join('')}</tbody>
-        <tfoot><tr style="font-weight:800;font-size:13.5px">
-          <td style="padding:11px 14px;border-top:2px solid var(--border);white-space:nowrap">합계 · ${rows.length}개 모델</td>
-          <td style="padding:11px 14px;border-top:2px solid var(--border)"></td>
-          <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${incRows.length.toLocaleString()}대</td>
-          <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${svDq(totDq)}</td>
-          <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap">${svDa(totDamt)}</td>
-          <td style="padding:11px 14px;border-top:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;color:var(--primary);white-space:nowrap">${fmtN(cur)}원</td>
-          <td style="padding:11px 14px;border-top:2px solid var(--border)"></td>
-        </tr></tfoot>`;
+        </tr>`).join('')}</tbody>`;
       };
       _renderSvTbl();
       window._svTblRerender = _renderSvTbl;
