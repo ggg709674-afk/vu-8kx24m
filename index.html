@@ -408,27 +408,27 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       <div class="vu-banner-sub">개통 기준 · 진행 현황은 아래 카드 참고</div>
     </div>
     <div class="vu-goals">
-      <div class="vu-goal">
+      <div class="vu-goal" onclick="editGoal('유선')" style="cursor:pointer" title="클릭해서 목표 수정">
         <div class="vu-goal-icon"><i data-lucide="zap"></i></div>
         <div class="vu-goal-body">
-          <span class="vu-goal-name">초고속 500M 이상</span>
-          <span class="vu-goal-pct">85<small>%</small></span>
+          <span class="vu-goal-name">초고속 500M 이상 ✎</span>
+          <span class="vu-goal-pct"><span id="bgoal-유선">85</span><small>%</small></span>
         </div>
       </div>
       <div class="vu-divider"></div>
-      <div class="vu-goal">
+      <div class="vu-goal" onclick="editGoal('tv1')" style="cursor:pointer" title="클릭해서 목표 수정">
         <div class="vu-goal-icon"><i data-lucide="tv"></i></div>
         <div class="vu-goal-body">
-          <span class="vu-goal-name">TV 스탠다드 이상</span>
-          <span class="vu-goal-pct">90<small>%</small></span>
+          <span class="vu-goal-name">TV 스탠다드 이상 ✎</span>
+          <span class="vu-goal-pct"><span id="bgoal-tv1">90</span><small>%</small></span>
         </div>
       </div>
       <div class="vu-divider"></div>
-      <div class="vu-goal">
+      <div class="vu-goal" onclick="editGoal('tv2')" style="cursor:pointer" title="클릭해서 목표 수정">
         <div class="vu-goal-icon"><i data-lucide="clapperboard"></i></div>
         <div class="vu-goal-body">
-          <span class="vu-goal-name">TV ALL 이상</span>
-          <span class="vu-goal-pct">30<small>%</small></span>
+          <span class="vu-goal-name">TV ALL 이상 ✎</span>
+          <span class="vu-goal-pct"><span id="bgoal-tv2">30</span><small>%</small></span>
         </div>
       </div>
     </div>
@@ -2062,6 +2062,11 @@ const svLoad = (() => {
   try {
     const { data: g } = await window._vuShare.from('vu_shared').select('data').eq('id', 'goals').maybeSingle();
     if (g && g.data) window._vuGoals = Object.assign({ 유선: 85, tv1: 90, tv2: 30 }, g.data);
+  } catch (e) {}
+  // 배너 목표값 반영
+  try {
+    const gg = window._vuGoals || { 유선: 85, tv1: 90, tv2: 30 };
+    ['유선', 'tv1', 'tv2'].forEach(k => { const el = document.getElementById('bgoal-' + k); if (el && gg[k] != null) el.textContent = gg[k]; });
   } catch (e) {}
   // 업로드 데이터 복원 — 온라인(vu_shared) 우선, 실패하면 이 브라우저 저장본
   let d = null;
