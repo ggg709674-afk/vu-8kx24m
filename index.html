@@ -933,6 +933,7 @@ function renderUsim() {
         <div class="sec-side usim-kpis">
           ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', 'tkey · 단말기 미판매 · 최종 개통')}
           ${(window._usimReceipt && window._usimReceipt.valid != null) ? kpiCard('blue', '유효접수', Number(window._usimReceipt.valid).toLocaleString(), '건', `workline SKT 유심 · 총 ${Number(window._usimReceipt.mobile||0).toLocaleString()}건 · 취소 ${Number((window._usimReceipt.mobile||0) - (window._usimReceipt.valid||0)).toLocaleString()}건`) : ''}
+          ${(window._uitPending != null) ? kpiCard('orange', '개통예정', Number(window._uitPending).toLocaleString(), '건', 'TO대기건') : ''}
         </div>
         <div class="chart-card">
           <div class="chart-title">일자별 유심개통 추이</div>
@@ -2217,6 +2218,7 @@ const svLoad = (() => {
       ['개통', '접수', '유심'].forEach(k => { if (d.names && d.names[k]) _files[k] = { name: d.names[k] }; });
       window._vuSavedAt = d.savedAt || null;
       window._usimReceipt = d.usimReceipt || null;   // UIT 유효접수(workline)
+      window._uitPending = (d.uitPending != null) ? d.uitPending : null;   // UIT 개통예정(TO대기건, 구글시트)
       window._vuRestoring = true;
       finishAnalysis(d.rows || [], d.rows2, d.swapped, d.rowsU);
       window._vuRestoring = false;
