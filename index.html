@@ -932,8 +932,7 @@ function renderUsim() {
       <div class="grid-2" style="grid-template-columns:1fr 1.5fr">
         <div class="sec-side usim-kpis">
           ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', 'tkey · 단말기 미판매 · 최종 개통')}
-          ${(window._usimReceipt && window._usimReceipt.valid != null) ? kpiCard('blue', '유효접수', Number(window._usimReceipt.valid).toLocaleString(), '건', 'workline SKT 유심 · 취소 제외') : ''}
-          ${kpiCard('red',   '취소·해지 제외', u.cancelled.toLocaleString(), '건', u.cancelled > 0 ? '서비스관리번호 기준 최종 취소' : '-')}
+          ${(window._usimReceipt && window._usimReceipt.valid != null) ? kpiCard('blue', '유효접수', Number(window._usimReceipt.valid).toLocaleString(), '건', `workline SKT 유심 · 총 ${Number(window._usimReceipt.mobile||0).toLocaleString()}건 · 취소 ${Number((window._usimReceipt.mobile||0) - (window._usimReceipt.valid||0)).toLocaleString()}건`) : ''}
         </div>
         <div class="chart-card">
           <div class="chart-title">일자별 유심개통 추이</div>
@@ -1814,7 +1813,7 @@ window.renderSummary = function renderSummary() {
   } else {
     const r = window._usimReceipt;
     html += section('UIT (유심)',
-      numBox('유효접수', (r && r.valid != null) ? won(r.valid) + '건' : '-', 'workline SKT 유심 · 취소 제외', 'var(--primary)'));
+      numBox('유효접수', (r && r.valid != null) ? won(r.valid) + '건' : '-', (r && r.valid != null) ? `SKT 유심 · 총 ${won(r.mobile)}건 · 취소 ${won((r.mobile||0)-(r.valid||0))}건` : 'workline', 'var(--primary)'));
   }
   // ── 재고현황 (두 탭 공통) ──
   const sv = window._svSummary;
