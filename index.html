@@ -1763,8 +1763,8 @@ lucide.createIcons();
 // 온라인 공유 저장소 (woozoo-apps) — 벨류업 데이터를 기기 간 공유
 window._vuShare = supabase.createClient('https://qpexfvwrlwkpjyihlnwz.supabase.co', 'sb_publishable_jHI1F0XBC9cYC1d43-MoBA_JFqLQdky');
 // ── 요약 대시보드 렌더 ──
-if (window._sumSub === undefined) window._sumSub = '개통';   // '개통' | '접수'
-function sumSub(k) { window._sumSub = k; window.renderSummary(); }
+if (window._sumSub === undefined) { try { window._sumSub = localStorage.getItem('vu_sumsub') || '개통'; } catch (e) { window._sumSub = '개통'; } }   // '개통' | '접수'
+function sumSub(k) { window._sumSub = k; try { localStorage.setItem('vu_sumsub', k); } catch (e) {} window.renderSummary(); }
 const UIT_GOAL = 150, UIT_UNIT = 50000;   // 목표 150건, 150건 달성 시 건당 5만원 그레이드
 
 window.renderSummary = function renderSummary() {
