@@ -1391,11 +1391,11 @@ function renderGoalFooter(achieved, total, goalPct, badCount) {
 }
 
 function computeGoals(fileType, planMap, mode) {
-  // mode: '개통' → 개통만 / '접수' → 접수파일 전체(모든 상태 합) / 그 외(미지정) → 개통+접수(기존 호환)
+  // mode: '개통' → 개통만 / '접수' → 접수+개통(취소·해지 제외) / 그 외(미지정) → 개통+접수(기존 호환)
   const agg = { total:0, bad:0, gigalite:0, giga:0, gwang:0, standard:0, all:0, etc:0 };
   Object.entries(planMap).forEach(([name, v]) => {
     const n = mode === '개통' ? (v.byStatus['개통']||0)
-            : mode === '접수' ? Object.values(v.byStatus).reduce((a,b)=>a+b,0)
+            : mode === '접수' ? (v.byStatus['접수']||0) + (v.byStatus['개통']||0)
             : (v.byStatus['개통']||0) + (v.byStatus['접수']||0);
     const b = (v.byStatus['접수취소']||0) + (v.byStatus['해지']||0);
     agg.bad += b;
@@ -1776,7 +1776,7 @@ window.renderSummary = function renderSummary() {
   const G = window._vuGoals || { 유선: 85, tv1: 90, tv2: 30 };
   const dcol = n => n > 0 ? '#10B981' : n < 0 ? '#EF4444' : 'var(--text-hint)';
   const dtxt = n => (n > 0 ? '+' : '') + won(n);
-  const recv = ft => (_cache['접수현황'] && _cache['접수현황'][ft] && _cache['접수현황'][ft].total) || 0;   // 접수 수(접수파일 기준)
+  const recv = ft => { const j = _cache['접수현황'] && _cache['접수현황'][ft]; if (!j) return 0; const m = j.statusMap || {}; return (m['접수']||0) + (m['개통']||0); };   // 접수=접수+개통(취소·해지 제외)
   // 목표 카드 (rate null 이면 데이터 없음 표시)
   const goalBox = (name, rate, goal) => {
     if (rate == null) return `<div style="flex:1;min-width:190px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px">
