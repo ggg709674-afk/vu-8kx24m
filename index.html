@@ -1765,6 +1765,8 @@ window._vuShare = supabase.createClient('https://qpexfvwrlwkpjyihlnwz.supabase.c
 // ── 요약 대시보드 렌더 ──
 if (window._sumSub === undefined) { try { window._sumSub = localStorage.getItem('vu_sumsub') || '개통'; } catch (e) { window._sumSub = '개통'; } }   // '개통' | '접수'
 function sumSub(k) { window._sumSub = k; try { localStorage.setItem('vu_sumsub', k); } catch (e) {} window.renderSummary(); }
+if (window._sumPeriod === undefined) window._sumPeriod = 'month';   // 'today'(준비중) | 'month'. 새로고침 시 이번달 기본
+function sumPeriod(k) { window._sumPeriod = k; window.renderSummary(); }
 const UIT_GOAL = 150, UIT_UNIT = 50000;   // 목표 150건, 150건 달성 시 건당 5만원 그레이드
 
 window.renderSummary = function renderSummary() {
@@ -1825,9 +1827,18 @@ window.renderSummary = function renderSummary() {
   const pts = window._svPts || [];
   html += `<div style="margin-bottom:8px"><div style="font-size:15px;font-weight:800;margin:0 0 10px 2px">재고금액 추이</div>
     <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px">${sumMiniChart(pts, eok)}</div></div>`;
-  // ── 기준 서브탭 (맨 위) ──
+  // ── 기간(오늘/이번달) + 기준(개통/접수) 서브탭 (맨 위) ──
+  const perBtn = (k, label) => { const on = (window._sumPeriod || 'month') === k; return `<button onclick="sumPeriod('${k}')" style="padding:7px 18px;border-radius:999px;border:1.5px solid ${on ? 'var(--primary)' : 'var(--border)'};background:${on ? 'var(--primary)' : 'var(--white)'};color:${on ? '#fff' : 'var(--text-sub)'};font-size:12.5px;font-weight:800;cursor:pointer">${label}</button>`; };
   const subBtn = (k, label) => { const on = window._sumSub === k; return `<button onclick="sumSub('${k}')" style="flex:1;padding:9px 14px;border-radius:10px;border:1.5px solid ${on ? 'var(--primary)' : 'var(--border)'};background:${on ? 'var(--primary)' : 'var(--white)'};color:${on ? '#fff' : 'var(--text-sub)'};font-size:13.5px;font-weight:800;cursor:pointer">${label}</button>`; };
-  el.innerHTML = `<div style="display:flex;gap:8px;margin-bottom:18px;max-width:340px">${subBtn('개통', '개통기준')}${subBtn('접수', '접수기준')}</div>${html}`;
+  const periodBar = `<div style="display:flex;gap:8px;margin-bottom:12px">${perBtn('today', '오늘')}${perBtn('month', '이번달')}</div>`;
+  const subBar = `<div style="display:flex;gap:8px;margin-bottom:18px;max-width:340px">${subBtn('개통', '개통기준')}${subBtn('접수', '접수기준')}</div>`;
+  const content = (window._sumPeriod === 'today')
+    ? `<div style="padding:56px 20px;text-align:center;background:var(--white);border:1px solid var(--border);border-radius:16px">
+         <div style="font-size:16px;font-weight:800;margin-bottom:8px">오늘 기준 · 준비중</div>
+         <div style="font-size:12.5px;color:var(--text-hint);line-height:1.6">오늘 기준 집계는 곧 제공됩니다.<br>현재는 <b>이번달</b> 기준만 표시됩니다.</div>
+       </div>`
+    : html;
+  el.innerHTML = periodBar + subBar + content;
 };
 
 // 요약 하단 재고 추이 미니 차트 (svLoad 의 _pts 재사용, y축 억/만 포맷)
