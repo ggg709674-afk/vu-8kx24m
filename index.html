@@ -1879,6 +1879,8 @@ function showMainTab(t) {
   if (elS) elS.textContent = tt[1];
   document.getElementById('vu-goal-banner').style.display = (t === 'uit' || t === 'summary') ? 'none' : '';
   if ((t === 'stock' || t === 'summary') && !_svLoaded) { _svLoaded = true; svLoad(); }
+  // 재고 탭 진입 시 현재 폭으로 재그리기(숨김 상태서 그려졌으면 hover 사각지대 생김)
+  if (t === 'stock' && window._svRedraw) requestAnimationFrame(() => window._svRedraw());
   if (t === 'summary') renderSummary();
 }
 
@@ -2188,6 +2190,8 @@ const svLoad = (() => {
   }
   let _rs = null;
   window.addEventListener('resize', () => { clearTimeout(_rs); _rs = setTimeout(() => { if (document.getElementById('main-stock').style.display !== 'none') { if (_pts.length) draw(_pts); if (window._svTblRerender) window._svTblRerender(); } }, 150); });
+  // 재고 탭이 실제 표시될 때 올바른 폭으로 재그리기(숨김 상태서 그려져 hover 사각지대 생기는 것 방지)
+  window._svRedraw = () => { if (_pts.length) draw(_pts); };
   return load;
 })();
 
