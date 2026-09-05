@@ -910,8 +910,23 @@ function aggregateUsim(rows, fileName) {
     const d = fmtDate(openRows[0]['개통일']);
     if (d) dateMap[d] = (dateMap[d] || 0) + 1;
   });
+  // 기기(단말기판매여부 Y) 개통 — 동일 최종판정
+  const isOpenY = r => r['단말기판매여부'] === 'Y' &&
+    (hist(r['판매변경이력']) === '판매(정상)' || (r['처리구분'] === '미처리' && hist(r['판매변경이력']) === ''));
+  const svcY = {};
+  rows.forEach(r => { if (r['단말기판매여부'] !== 'Y') return; const s = r['서비스관리번호']; (svcY[s] = svcY[s] || []).push(r); });
+  let gigiCounted = 0;
+  Object.keys(svcY).forEach(s => {
+    const g = svcY[s];
+    if (!g.some(isOpenY)) return;
+    const saleCancel = g.some(x => hist(x['판매변경이력']) === '판매(취소)' || hist(x['판매변경이력']).startsWith('판매취소'));
+    const resold     = g.some(x => hist(x['판매변경이력']) === '할부추가(정상)');
+    const terminated = g.some(x => x['해지여부'] === 'Y');
+    if (terminated || (saleCancel && !resold)) return;
+    gigiCounted++;
+  });
   return {
-    file_name: fileName, cand, counted, cancelled,
+    file_name: fileName, cand, counted, cancelled, gigiCounted,
     dateEntries: Object.entries(dateMap).sort((a,b) => a[0].localeCompare(b[0])),
     updated_at: new Date().toISOString()
   };
@@ -1806,6 +1821,20 @@ window.renderSummary = function renderSummary() {
   const sunN = isRc ? recv('유선') : ((_cache['유선'] && _cache['유선'].summary.statusMap['개통']) || 0);
   const tvN  = isRc ? recv('IPTV') : ((_cache['IPTV'] && _cache['IPTV'].summary.statusMap['개통']) || 0);
   html += section(qLabel + ' 수량', numBox('유선 ' + qLabel, won(sunN) + '건') + numBox('IPTV ' + qLabel, won(tvN) + '건') + numBox('합계', won(sunN + tvN) + '건', null, 'var(--primary)'));
+  // ── 단순 수량 상세 (인터넷 단품/번들 · UIT · 기기) — 고객 수 기준, 취소·해지 제외 ──
+  {
+    const combo = isRc ? _cache['결합접수'] : _cache['결합개통'];
+    const cok = combo && !combo.stale;
+    const u = _cache['유심'];
+    const uitV  = isRc ? (window._usimReceipt ? window._usimReceipt.valid : null) : (u ? u.counted : null);
+    const gigiV = isRc ? null : (u ? u.gigiCounted : null);   // 기기 접수는 소스없어 준비중
+    const numOr = (label, val, sub) => numBox(label, (val == null) ? '준비중' : won(val) + '건', sub, (val == null) ? 'var(--text-hint)' : 'var(--primary)');
+    html += section(qLabel + ' 수량 · 상세',
+        numBox('인터넷 단품', cok ? won(combo.netOnly) + '건' : '-', '인터넷만', 'var(--primary)')
+      + numBox('인터넷 번들', cok ? won(combo.both) + '건' : '-', '인터넷+TV', 'var(--primary)')
+      + numOr('UIT ' + qLabel, uitV, isRc ? 'workline 유효접수' : '유심 개통')
+      + numOr('기기 ' + qLabel, gigiV, isRc ? '준비중' : '단말기(Y) 개통'));
+  }
   // ── UIT (유심) — 개통기준=tkey 유심개통+그레이드 / 접수기준=workline 유효접수 ──
   if (!isRc) {
     const u = _cache['유심'];
