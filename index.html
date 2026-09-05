@@ -96,6 +96,11 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 
 /* ── 레이아웃 ── */
 .sa-wrap { max-width: 1400px; margin: 0 auto; padding: 20px 24px 40px; }
+/* 요약 컨트롤(오늘/이번달 · 개통/접수) — 한 줄 가로 + 스크롤 시 상단바 아래 고정 */
+.sum-ctl { position:sticky; top:var(--tb-h, 60px); z-index:50; background:var(--bg); display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:10px 0 12px; margin:-6px 0 12px; }
+.sum-ctl .grp { display:flex; gap:6px; }
+.sum-ctl .sep { width:1px; height:22px; background:var(--border); }
+@media (max-width:760px){ .sum-ctl .sep { display:none; } }
 .sa-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:12px; flex-wrap:wrap; }
 .sa-title { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
 .sa-title span { color:var(--primary); }
@@ -1861,9 +1866,13 @@ window.renderSummary = function renderSummary() {
     <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px">${sumMiniChart(pts, eok)}</div></div>`;
   // ── 기간(오늘/이번달) + 기준(개통/접수) 서브탭 (맨 위) ──
   const perBtn = (k, label) => { const on = (window._sumPeriod || 'month') === k; return `<button onclick="sumPeriod('${k}')" style="padding:7px 18px;border-radius:999px;border:1.5px solid ${on ? 'var(--primary)' : 'var(--border)'};background:${on ? 'var(--primary)' : 'var(--white)'};color:${on ? '#fff' : 'var(--text-sub)'};font-size:12.5px;font-weight:800;cursor:pointer">${label}</button>`; };
-  const subBtn = (k, label) => { const on = window._sumSub === k; return `<button onclick="sumSub('${k}')" style="flex:1;padding:9px 14px;border-radius:10px;border:1.5px solid ${on ? 'var(--primary)' : 'var(--border)'};background:${on ? 'var(--primary)' : 'var(--white)'};color:${on ? '#fff' : 'var(--text-sub)'};font-size:13.5px;font-weight:800;cursor:pointer">${label}</button>`; };
-  const periodBar = `<div style="display:flex;gap:8px;margin-bottom:12px">${perBtn('today', '오늘')}${perBtn('month', '이번달')}</div>`;
-  const subBar = `<div style="display:flex;gap:8px;margin-bottom:18px;max-width:340px">${subBtn('개통', '개통기준')}${subBtn('접수', '접수기준')}</div>`;
+  const subBtn = (k, label) => { const on = window._sumSub === k; return `<button onclick="sumSub('${k}')" style="padding:8px 16px;border-radius:10px;border:1.5px solid ${on ? 'var(--primary)' : 'var(--border)'};background:${on ? 'var(--primary)' : 'var(--white)'};color:${on ? '#fff' : 'var(--text-sub)'};font-size:13.5px;font-weight:800;cursor:pointer">${label}</button>`; };
+  // 한 줄 가로 배치: [오늘][이번달] | [개통기준][접수기준] — .sum-ctl 이 스크롤 시 상단바 아래 고정
+  const ctlBar = `<div class="sum-ctl">
+      <div class="grp">${perBtn('today', '오늘')}${perBtn('month', '이번달')}</div>
+      <div class="sep"></div>
+      <div class="grp">${subBtn('개통', '개통기준')}${subBtn('접수', '접수기준')}</div>
+    </div>`;
   let content;
   if (window._sumPeriod === 'today') {
     // ── 오늘 값 계산 (목표 없이 수량만, "오늘 / 이번달") ──
@@ -1900,7 +1909,8 @@ window.renderSummary = function renderSummary() {
   } else {
     content = html;
   }
-  el.innerHTML = periodBar + subBar + content;
+  el.innerHTML = ctlBar + content;
+  if (window._syncTbH) window._syncTbH();
 };
 
 // 요약 하단 재고 추이 미니 차트 (svLoad 의 _pts 재사용, y축 억/만 포맷)
@@ -1967,14 +1977,19 @@ function toggleDrawer(force) {
 // 모바일: 아래로 스크롤하면 로고 줄 접힘 (메뉴 줄만 상단 고정)
 // 접힘(>110)/펼침(<20) 임계값 분리 — 로고줄(48px)이 접히며 문서 높이가 줄면 scrollY가
 // 되튀어 경계에서 붙었다 떨어졌다 하는 떨림 방지 (간격이 접힘 높이보다 커야 함)
+// 상단바 실제 높이 → --tb-h (요약 컨트롤바 sticky top). 모바일은 스크롤 시 로고줄 접혀 높이가 변함
+window._syncTbH = () => { const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--tb-h', tb.offsetHeight + 'px'); };
 window.addEventListener('scroll', () => {
   const tb = document.querySelector('.topbar');
   if (!tb) return;
-  if (window.innerWidth > 760) { tb.classList.remove('scrolled'); return; }
+  if (window.innerWidth > 760) { tb.classList.remove('scrolled'); window._syncTbH(); return; }
   const y = window.scrollY;
   if (y > 110) tb.classList.add('scrolled');
   else if (y < 20) tb.classList.remove('scrolled');
+  window._syncTbH();
 }, { passive: true });
+window.addEventListener('resize', () => window._syncTbH(), { passive: true });
+window.addEventListener('load', () => window._syncTbH());
 
 // ===== 재고현황 — 재고금액 추이 (본체 Supabase anon 뷰, 재고금액추이.html과 동일 로직) =====
 // 모델코드 → 한글 표시명 (woozoo model_mapping 스냅샷 · 없는 코드는 코드 그대로 표시)
