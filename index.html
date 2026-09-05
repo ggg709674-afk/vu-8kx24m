@@ -720,6 +720,7 @@ function runAnalysis() {
 }
 
 function finishAnalysis(rows, rows2, swapped, rowsU) {
+  window._vuRaw = { rows: rows || [], rows2: rows2 || [], rowsU: rowsU || [] };   // 오늘 필터용 원본
   const split = { '유선':[], 'IPTV':[] };
   rows.forEach(r => {
     const t = classifyRow(r['요금제상품명']);
@@ -1863,12 +1864,41 @@ window.renderSummary = function renderSummary() {
   const subBtn = (k, label) => { const on = window._sumSub === k; return `<button onclick="sumSub('${k}')" style="flex:1;padding:9px 14px;border-radius:10px;border:1.5px solid ${on ? 'var(--primary)' : 'var(--border)'};background:${on ? 'var(--primary)' : 'var(--white)'};color:${on ? '#fff' : 'var(--text-sub)'};font-size:13.5px;font-weight:800;cursor:pointer">${label}</button>`; };
   const periodBar = `<div style="display:flex;gap:8px;margin-bottom:12px">${perBtn('today', '오늘')}${perBtn('month', '이번달')}</div>`;
   const subBar = `<div style="display:flex;gap:8px;margin-bottom:18px;max-width:340px">${subBtn('개통', '개통기준')}${subBtn('접수', '접수기준')}</div>`;
-  const content = (window._sumPeriod === 'today')
-    ? `<div style="padding:56px 20px;text-align:center;background:var(--white);border:1px solid var(--border);border-radius:16px">
-         <div style="font-size:16px;font-weight:800;margin-bottom:8px">오늘 기준 · 준비중</div>
-         <div style="font-size:12.5px;color:var(--text-hint);line-height:1.6">오늘 기준 집계는 곧 제공됩니다.<br>현재는 <b>이번달</b> 기준만 표시됩니다.</div>
-       </div>`
-    : html;
+  let content;
+  if (window._sumPeriod === 'today') {
+    // ── 오늘 값 계산 (목표 없이 수량만, "오늘 / 이번달") ──
+    const raw = window._vuRaw || { rows: [], rows2: [], rowsU: [] };
+    const now = new Date();
+    const T = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const isT = (r, f) => fmtDate(r[f]) === T;
+    const dateField = isRc ? '서비스청약일자' : '서비스가입일자';
+    const todayRows = (isRc ? raw.rows2 : raw.rows).filter(r => isT(r, dateField));
+    const cT = aggregateCombo(todayRows); const cTok = cT && !cT.stale;
+    const uT = raw.rowsU.length ? aggregateUsim(raw.rowsU.filter(r => isT(r, '개통일')), '') : null;
+    const typeTodayCnt = type => todayRows.filter(r => classifyRow(r['요금제상품명']) === type && (isRc ? (r['진행상태'] === '접수' || r['진행상태'] === '개통') : r['진행상태'] === '개통')).length;
+    // 이번달 값
+    const combo = isRc ? _cache['결합접수'] : _cache['결합개통']; const cok = combo && !combo.stale;
+    const u = _cache['유심'];
+    const monSun = isRc ? recv('유선') : ((_cache['유선'] && _cache['유선'].summary.statusMap['개통']) || 0);
+    const monTv  = isRc ? recv('IPTV') : ((_cache['IPTV'] && _cache['IPTV'].summary.statusMap['개통']) || 0);
+    const uitMon = isRc ? (window._usimReceipt ? window._usimReceipt.valid : null) : (u ? u.counted : null);
+    const gigiMon = isRc ? null : (u ? u.gigiCounted : null);
+    const P = isRc ? '접수' : '개통';
+    const tm = (label, tVal, mVal, sub) => numBox(label,
+      `${tVal == null ? '–' : won(tVal)} <span style="font-size:14px;color:var(--text-hint);font-weight:700">/ ${mVal == null ? '준비중' : won(mVal)}</span>`,
+      (sub ? sub + ' · ' : '') + '오늘 / 이번달', 'var(--primary)');
+    let th = section(P + ' 수량 · 상세',
+        tm('인터넷 단품', cTok ? cT.netOnly : 0, cok ? combo.netOnly : null, '인터넷만')
+      + tm('인터넷 번들', cTok ? cT.both : 0, cok ? combo.both : null, '인터넷+TV')
+      + tm('UIT ' + P, isRc ? null : (uT ? uT.counted : 0), uitMon, isRc ? '준비중' : '유심')
+      + tm('기기 ' + P, isRc ? null : (uT ? uT.gigiCounted : 0), gigiMon, isRc ? '준비중' : '단말기(Y)'));
+    th += section(P + ' 수량',
+        tm('유선 ' + P, typeTodayCnt('유선'), monSun)
+      + tm('IPTV ' + P, typeTodayCnt('IPTV'), monTv));
+    content = th;
+  } else {
+    content = html;
+  }
   el.innerHTML = periodBar + subBar + content;
 };
 
