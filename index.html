@@ -1815,13 +1815,8 @@ window.renderSummary = function renderSummary() {
   const sTv = isRc ? _cache['IPTV_접수'] : _cache['IPTV'];
   if (sTv) { const g = computeGoals('IPTV', sTv.summary.planMap, isRc ? '접수' : '개통'); rTv1 = g.total > 0 ? (g.standard + g.all) / g.total * 100 : 0; rTv2 = g.total > 0 ? g.all / g.total * 100 : 0; }
   let html = '';
-  html += section('목표 달성률', goalBox('초고속 500M 이상', rSun, G.유선 ?? 85) + goalBox('TV 스탠다드 이상', rTv1, G.tv1 ?? 90) + goalBox('TV ALL 이상', rTv2, G.tv2 ?? 30));
-  // ── 개통(접수) 수량 ──
   const qLabel = isRc ? '접수' : '개통';
-  const sunN = isRc ? recv('유선') : ((_cache['유선'] && _cache['유선'].summary.statusMap['개통']) || 0);
-  const tvN  = isRc ? recv('IPTV') : ((_cache['IPTV'] && _cache['IPTV'].summary.statusMap['개통']) || 0);
-  html += section(qLabel + ' 수량', numBox('유선 ' + qLabel, won(sunN) + '건') + numBox('IPTV ' + qLabel, won(tvN) + '건') + numBox('합계', won(sunN + tvN) + '건', null, 'var(--primary)'));
-  // ── 단순 수량 상세 (인터넷 단품/번들 · UIT · 기기) — 고객 수 기준, 취소·해지 제외 ──
+  // ── 단순 수량 상세 (맨 위) — 인터넷 단품/번들·UIT·기기, 고객 수 기준, 취소·해지 제외 ──
   {
     const combo = isRc ? _cache['결합접수'] : _cache['결합개통'];
     const cok = combo && !combo.stale;
@@ -1835,6 +1830,11 @@ window.renderSummary = function renderSummary() {
       + numOr('UIT ' + qLabel, uitV, isRc ? 'workline 유효접수' : '유심 개통')
       + numOr('기기 ' + qLabel, gigiV, isRc ? '준비중' : '단말기(Y) 개통'));
   }
+  html += section('목표 달성률', goalBox('초고속 500M 이상', rSun, G.유선 ?? 85) + goalBox('TV 스탠다드 이상', rTv1, G.tv1 ?? 90) + goalBox('TV ALL 이상', rTv2, G.tv2 ?? 30));
+  // ── 개통(접수) 수량 ──
+  const sunN = isRc ? recv('유선') : ((_cache['유선'] && _cache['유선'].summary.statusMap['개통']) || 0);
+  const tvN  = isRc ? recv('IPTV') : ((_cache['IPTV'] && _cache['IPTV'].summary.statusMap['개통']) || 0);
+  html += section(qLabel + ' 수량', numBox('유선 ' + qLabel, won(sunN) + '건') + numBox('IPTV ' + qLabel, won(tvN) + '건') + numBox('합계', won(sunN + tvN) + '건', null, 'var(--primary)'));
   // ── UIT (유심) — 개통기준=tkey 유심개통+그레이드 / 접수기준=workline 유효접수 ──
   if (!isRc) {
     const u = _cache['유심'];
