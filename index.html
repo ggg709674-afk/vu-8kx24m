@@ -1786,8 +1786,8 @@ window._vuShare = supabase.createClient('https://qpexfvwrlwkpjyihlnwz.supabase.c
 // ── 요약 대시보드 렌더 ──
 if (window._sumSub === undefined) { try { window._sumSub = localStorage.getItem('vu_sumsub') || '개통'; } catch (e) { window._sumSub = '개통'; } }   // '개통' | '접수'
 function sumSub(k) { window._sumSub = k; try { localStorage.setItem('vu_sumsub', k); } catch (e) {} window.renderSummary(); }
-if (window._sumPeriod === undefined) window._sumPeriod = 'month';   // 'today'(준비중) | 'month'. 새로고침 시 이번달 기본
-function sumPeriod(k) { window._sumPeriod = k; window.renderSummary(); }
+if (window._sumPeriod === undefined) { try { window._sumPeriod = localStorage.getItem('vu_sumperiod') || 'month'; } catch (e) { window._sumPeriod = 'month'; } }   // 'today' | 'month' — 새로고침 유지
+function sumPeriod(k) { window._sumPeriod = k; try { localStorage.setItem('vu_sumperiod', k); } catch (e) {} window.renderSummary(); }
 const UIT_GOAL = 150, UIT_UNIT = 50000;   // 목표 150건, 150건 달성 시 건당 5만원 그레이드
 
 window.renderSummary = function renderSummary() {
