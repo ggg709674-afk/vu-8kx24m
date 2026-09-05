@@ -1823,7 +1823,7 @@ window.renderSummary = function renderSummary() {
     const cok = combo && !combo.stale;
     const u = _cache['유심'];
     const uitV  = isRc ? (window._usimReceipt ? window._usimReceipt.valid : null) : (u ? u.counted : null);
-    const gigiV = isRc ? null : (u ? u.gigiCounted : null);   // 기기 접수는 소스없어 준비중
+    const gigiV = isRc ? (window._gigiReceipt ? window._gigiReceipt.month : null) : (u ? u.gigiCounted : null);   // 접수=woozoo device_orders
     const numOr = (label, val, sub) => numBox(label, (val == null) ? '준비중' : won(val) + '건', sub, (val == null) ? 'var(--text-hint)' : 'var(--primary)');
     const netTot = cok ? (combo.netOnly + combo.both) : 0;   // 단품+번들 합산 기준
     const pctOf = v => netTot > 0 ? (v / netTot * 100).toFixed(1) + '%' : '-';
@@ -1831,7 +1831,7 @@ window.renderSummary = function renderSummary() {
         numBox('인터넷 단품', cok ? won(combo.netOnly) + '건' : '-', cok ? `인터넷만 · ${pctOf(combo.netOnly)}` : '인터넷만', 'var(--primary)')
       + numBox('인터넷 번들', cok ? won(combo.both) + '건' : '-', cok ? `인터넷+TV · ${pctOf(combo.both)}` : '인터넷+TV', 'var(--primary)')
       + numOr('UIT ' + qLabel, uitV, isRc ? 'workline 유효접수' : '유심 개통')
-      + numOr('기기 ' + qLabel, gigiV, isRc ? '준비중' : '단말기(Y) 개통'));
+      + numOr('기기 ' + qLabel, gigiV, isRc ? 'woozoo 기기접수' : '단말기(Y) 개통'));
   }
   html += section('목표 달성률', goalBox('초고속 500M 이상', rSun, G.유선 ?? 85) + goalBox('TV 스탠다드 이상', rTv1, G.tv1 ?? 90) + goalBox('TV ALL 이상', rTv2, G.tv2 ?? 30));
   // ── 개통(접수) 수량 ──
@@ -1882,7 +1882,8 @@ window.renderSummary = function renderSummary() {
     const monSun = isRc ? recv('유선') : ((_cache['유선'] && _cache['유선'].summary.statusMap['개통']) || 0);
     const monTv  = isRc ? recv('IPTV') : ((_cache['IPTV'] && _cache['IPTV'].summary.statusMap['개통']) || 0);
     const uitMon = isRc ? (window._usimReceipt ? window._usimReceipt.valid : null) : (u ? u.counted : null);
-    const gigiMon = isRc ? null : (u ? u.gigiCounted : null);
+    const gigiMon = isRc ? (window._gigiReceipt ? window._gigiReceipt.month : null) : (u ? u.gigiCounted : null);
+    const gigiTod = isRc ? (window._gigiReceipt ? window._gigiReceipt.today : null) : null;   // 기기접수 오늘=시트B1
     const P = isRc ? '접수' : '개통';
     const tm = (label, tVal, mVal, sub) => numBox(label,
       `${tVal == null ? '–' : won(tVal)} <span style="font-size:14px;color:var(--text-hint);font-weight:700">/ ${mVal == null ? '준비중' : won(mVal)}</span>`,
@@ -1891,7 +1892,7 @@ window.renderSummary = function renderSummary() {
         tm('인터넷 단품', cTok ? cT.netOnly : 0, cok ? combo.netOnly : null, '인터넷만')
       + tm('인터넷 번들', cTok ? cT.both : 0, cok ? combo.both : null, '인터넷+TV')
       + tm('UIT ' + P, isRc ? null : (uT ? uT.counted : 0), uitMon, isRc ? '준비중' : '유심')
-      + tm('기기 ' + P, isRc ? null : (uT ? uT.gigiCounted : 0), gigiMon, isRc ? '준비중' : '단말기(Y)'));
+      + tm('기기 ' + P, isRc ? gigiTod : (uT ? uT.gigiCounted : 0), gigiMon, isRc ? 'woozoo/시트B1' : '단말기(Y)'));
     th += section(P + ' 수량',
         tm('유선 ' + P, typeTodayCnt('유선'), monSun)
       + tm('IPTV ' + P, typeTodayCnt('IPTV'), monTv));
@@ -2295,6 +2296,7 @@ const svLoad = (() => {
       window._vuSavedAt = d.savedAt || null;
       window._usimReceipt = d.usimReceipt || null;   // UIT 유효접수(workline)
       window._uitPending = (d.uitPending != null) ? d.uitPending : null;   // UIT 개통예정(TO대기건, 구글시트)
+      window._gigiReceipt = d.gigiReceipt || null;   // 기기 접수(이번달=woozoo, 오늘=시트B1)
       window._vuRestoring = true;
       finishAnalysis(d.rows || [], d.rows2, d.swapped, d.rowsU);
       window._vuRestoring = false;
