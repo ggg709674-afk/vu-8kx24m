@@ -1900,7 +1900,7 @@ window.renderSummary = function renderSummary() {
     let th = section(P + ' 수량 · 상세',
         tm('인터넷 단품', cTok ? cT.netOnly : 0, cok ? combo.netOnly : null, '인터넷만')
       + tm('인터넷 번들', cTok ? cT.both : 0, cok ? combo.both : null, '인터넷+TV')
-      + tm('UIT ' + P, isRc ? null : (uT ? uT.counted : 0), uitMon, isRc ? '준비중' : '유심')
+      + tm('UIT ' + P, isRc ? (window._usimReceipt ? window._usimReceipt.today : null) : (uT ? uT.counted : 0), uitMon, isRc ? 'workline' : '유심')
       + tm('기기 ' + P, isRc ? gigiTod : (uT ? uT.gigiCounted : 0), gigiMon, isRc ? 'woozoo/시트B1' : '단말기(Y)'));
     th += section(P + ' 수량',
         tm('유선 ' + P, typeTodayCnt('유선'), monSun)
