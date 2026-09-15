@@ -938,6 +938,19 @@ function aggregateUsim(rows, fileName) {
   };
 }
 
+// UIT 비율 = 유심개통 / 인터넷개통(단품+번들). 세 탭(요약·T벨류업·UIT) 공통.
+function _uitRatio() {
+  const u = _cache['유심'], combo = _cache['결합개통'];
+  const net = (combo && !combo.stale) ? (combo.netOnly + combo.both) : 0;
+  const uit = u ? u.counted : 0;
+  if (!net || !uit) return null;
+  return { pct: (uit / net * 100).toFixed(1) + '%', uit, net };
+}
+function _uitRatioCard() {
+  const r = _uitRatio();
+  return r ? kpiCard('blue', '유선 대비 UIT', r.pct, '', `유심 ${r.uit} / 인터넷 ${r.net}`) : '';
+}
+
 function renderUsim() {
   const el = document.getElementById('content-유심');
   const u = _cache['유심'];
@@ -953,6 +966,7 @@ function renderUsim() {
       <div class="grid-2" style="grid-template-columns:1fr 1.5fr">
         <div class="sec-side usim-kpis">
           ${kpiCard('green', '유심개통', u.counted.toLocaleString(), '건', 'tkey · 단말기 미판매 · 최종 개통')}
+          ${_uitRatioCard()}
           ${(window._usimReceipt && window._usimReceipt.valid != null) ? kpiCard('blue', '유효접수', Number(window._usimReceipt.valid).toLocaleString(), '건', `workline SKT 유심 · 총 ${Number(window._usimReceipt.mobile||0).toLocaleString()}건 · 취소 ${Number((window._usimReceipt.mobile||0) - (window._usimReceipt.valid||0)).toLocaleString()}건`) : ''}
           ${(window._uitPending != null) ? kpiCard('orange', '개통예정 (TO대기건)', Number(window._uitPending).toLocaleString(), '건', '') : ''}
         </div>
@@ -1581,7 +1595,8 @@ function render(container, summary, meta, fileType) {
       ${kpiCard('blue',  '총접수', jRecv.toLocaleString(), '건', `${pct(jRecv,jTotal).toFixed(1)}% · 개통 ${(jm['개통']||0).toLocaleString()} 포함`)}
       ${kpiCard('red',   '취소', jCancel.toLocaleString(), '건', `${pct(jCancel,jTotal).toFixed(1)}%`)}
       ${kpiCard('orange','해지', jEnd.toLocaleString(), '건', `${pct(jEnd,jTotal).toFixed(1)}%`)}
-      ${kpiCard('gray',  '기타', jOthers.toLocaleString(), '건', jOthers>0 ? `${pct(jOthers,jTotal).toFixed(1)}%` : '-')}`;
+      ${kpiCard('gray',  '기타', jOthers.toLocaleString(), '건', jOthers>0 ? `${pct(jOthers,jTotal).toFixed(1)}%` : '-')}
+      ${fileType === '유선' ? _uitRatioCard() : ''}`;
   } else {
     kpiCards = `
       ${kpiCard('green', '개통', opened.toLocaleString(), '건', `${pct(opened,total).toFixed(1)}%`)}
@@ -1589,7 +1604,8 @@ function render(container, summary, meta, fileType) {
       ${kpiCard('blue',  '접수', received.toLocaleString(), '건', `${pct(received,total).toFixed(1)}%`)}
       ${kpiCard('red',   '취소', cancelled.toLocaleString(), '건', `${pct(cancelled,total).toFixed(1)}%`)}
       ${kpiCard('orange','해지', ended.toLocaleString(), '건', `${pct(ended,total).toFixed(1)}%`)}
-      ${kpiCard('gray',  '기타', others.toLocaleString(), '건', others>0 ? `${pct(others,total).toFixed(1)}%` : '-')}`;
+      ${kpiCard('gray',  '기타', others.toLocaleString(), '건', others>0 ? `${pct(others,total).toFixed(1)}%` : '-')}
+      ${fileType === '유선' ? _uitRatioCard() : ''}`;
   }
 
   container.innerHTML = `
