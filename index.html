@@ -1874,6 +1874,7 @@ function pfRender() {
   const warn = [], un = (c.w6.upsellUnmatched || 0) + (c.w2.upsellUnmatched || 0), be = (c.m2.bothErr || 0) + (c.m6.bothErr || 0);
   if (un) warn.push(`업셀링 ${un}줄이 같은 달 TV와 짝이 안 맞아 TV 최종 상품에 반영되지 않았습니다.`);
   if (be) warn.push(`무선 ${be}줄에 약정과 동판수수료가 둘 다 들어 있습니다(입력 오류 의심).`);
+  const d6 = (c.m6.grp || {})['단판'] || 0; if (d6) warn.push(`1706 유심에 단판 ${d6}건 — 코드 잘못 찍힌 건(1702여야 함). UIT 그레이드에서는 뺐습니다.`);
   const man = v => (v / 10000).toLocaleString('ko-KR');
   const tf = c.w6.tvFinal || {}, sp = c.w6.speed || {};
   el.innerHTML = `
