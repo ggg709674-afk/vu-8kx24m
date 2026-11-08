@@ -361,6 +361,30 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 
   #main-stock > div { padding:12px 6px !important; }
 }
+
+/* ── 수익현황 ── */
+#main-profit .pf-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:14px; }
+#main-profit .pf-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+#main-profit .pf-top select, #main-profit .pf-in input { height:32px; border:1px solid var(--border); border-radius:8px; padding:0 10px; font:inherit; font-size:13px; background:var(--white); color:var(--text); }
+#main-profit .pf-meta { font-size:12px; color:var(--text-hint); margin-left:auto; }
+#main-profit .pf-h { font-size:14px; font-weight:800; color:var(--text); margin:0 0 10px; display:flex; align-items:baseline; gap:8px; }
+#main-profit .pf-h small { font-size:11.5px; font-weight:500; color:var(--text-hint); }
+#main-profit table.pf { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
+#main-profit table.pf th, #main-profit table.pf td { border:1px solid var(--border); padding:7px 10px; text-align:center; }
+#main-profit table.pf th { background:var(--primary-light); color:var(--primary); font-weight:700; }
+#main-profit table.pf td.l { white-space:nowrap; text-align:left; background:#FAFBFC; font-weight:600; color:var(--text-sub); }
+#main-profit table.pf td.neg { color:var(--red); }
+#main-profit table.pf tr.vu td.l { background:#FFF6CC; }
+#main-profit table.pf tr.gr td.l { background:var(--orange-bg); }
+#main-profit table.pf tr.tot td { font-weight:800; font-size:14px; background:var(--primary-light); }
+#main-profit .pf-scroll { overflow-x:auto; }
+#main-profit .pf-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+#main-profit .pf-in { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; font-size:12.5px; color:var(--text-sub); }
+#main-profit .pf-in label { display:flex; align-items:center; gap:6px; }
+#main-profit .pf-in input { width:96px; text-align:right; }
+#main-profit .pf-note { font-size:11.5px; color:var(--text-hint); margin-top:8px; line-height:1.6; }
+#main-profit .pf-warn { font-size:12px; color:var(--red); background:var(--red-bg); border-radius:8px; padding:8px 12px; margin-bottom:12px; }
+@media (max-width:640px) { #main-profit .pf-meta { margin-left:0; } #main-profit .pf-card { padding:14px; } }
 </style>
 </head>
 <body>
@@ -386,6 +410,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       <button class="on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> T벨류업</button>
       <button id="ttab-uit" onclick="showMainTab('uit')"><i data-lucide="smartphone" style="width:14px;height:14px"></i> UIT</button>
       <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 재고현황</button>
+      <button id="ttab-profit" onclick="showMainTab('profit')"><i data-lucide="receipt" style="width:14px;height:14px"></i> 수익현황</button>
     </div>
     <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" id="vu-pull-btn" onclick="vuPullNow(this)" title="지금 tkey 최신 데이터 불러오기"><i data-lucide="refresh-cw"></i></button><button class="gear-btn" onclick="openMargin()" title="협력점별 정산마진" style="display:none"><i data-lucide="calculator"></i></button><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
   </div>
@@ -597,6 +622,9 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   </div><!-- /main-sales -->
 
   <!-- ── 재고현황 ── -->
+  <!-- ── 수익현황 (워크라인 정산 실시간, 2026-11-08) ── -->
+  <div id="main-profit" style="display:none"><div id="pf-body" style="max-width:980px;margin:0 auto"></div></div>
+
   <div id="main-stock" style="display:none">
     <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px">
       <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px">
@@ -1796,6 +1824,115 @@ renderUsim();
 lucide.createIcons();
 </script>
 <script>
+// ===== 수익현황 (티키 연결관리가 workline 정산을 집계해 vu_shared 'profit_YYYY-MM' 에 올림, 2026-11-08) =====
+// 규칙(사용자 2026-11-08): 유선 마진 = 상부 − 전체(약정+번들−미비−기타, 인센 포함·민원및추가지급·업셀링 제외) − 직영 2팀 마진 − 벨류업(1706)
+//   유심 마진 = 상부 − 전체(줄마다 약정 또는 동판) − 직영 2팀 마진 − UIT 그레이드(1706 동판·가족동판 × 45,454). 기기는 제외. 수수료수익 = 실적 × 기준금액 × 28
+const PF_GR_UNIT = 45454, PF_MONTHS = 28;
+let _pf = { months: [], ym: null, data: {}, cfg: { fee: { inet: 1017, tv: 340, usim: 1856 }, vu: {} } }, _pfT = null;
+const pfN = v => Math.round(Number(v) || 0);
+const pfF = v => { const n = pfN(v); return (n < 0 ? '-' : '') + Math.abs(n).toLocaleString('ko-KR'); };
+const pfC = v => (Number(v) || 0).toLocaleString('ko-KR');
+const pfTd = (v, cls) => `<td class="${(cls || '') + (pfN(v) < 0 ? ' neg' : '')}">${pfF(v)}</td>`;
+async function pfLoad() {
+  const sb = window._vuShare; if (!sb) return;
+  try {
+    const { data: rows } = await sb.from('vu_shared').select('id,data').like('id', 'profit_%');
+    (rows || []).forEach(r => {
+      if (r.id === 'profit_cfg') { if (r.data) { _pf.cfg.fee = Object.assign(_pf.cfg.fee, r.data.fee || {}); _pf.cfg.vu = r.data.vu || {}; } }
+      else if (r.data && r.data.month) _pf.data[r.data.month] = r.data;
+    });
+  } catch (e) {}
+  _pf.months = Object.keys(_pf.data).sort().reverse();
+  if (!_pf.ym || !_pf.data[_pf.ym]) { let s = null; try { s = localStorage.getItem('vu_pf_ym'); } catch (e) {} _pf.ym = (s && _pf.data[s]) ? s : _pf.months[0]; }
+  pfRender();
+}
+function pfSaveCfg() { clearTimeout(_pfT); _pfT = setTimeout(() => { try { window._vuShare.from('vu_shared').upsert({ id: 'profit_cfg', data: _pf.cfg, updated_at: new Date().toISOString() }).then(() => {}); } catch (e) {} }, 500); }
+function pfSetFee(k, v) { _pf.cfg.fee[k] = pfN(String(v).replace(/,/g, '')); pfSaveCfg(); pfRender(); }
+function pfVu(ym) { return Object.assign({ g500: 30000, std: 10000, all: 10000 }, _pf.cfg.vu[ym] || {}); }
+function pfSetVu(k, v) { const ym = _pf.ym; _pf.cfg.vu[ym] = Object.assign(pfVu(ym), { [k]: pfN(String(v).replace(/,/g, '')) }); pfSaveCfg(); pfRender(); }
+function pfPick(ym) { _pf.ym = ym; try { localStorage.setItem('vu_pf_ym', ym); } catch (e) {} pfRender(); }
+function pfCalc(d, ym) {
+  const W = d.wire || {}, M = d.mobile || {}, w2 = W['1702'] || {}, w6 = W['1706'] || {}, m2 = M['1702'] || {}, m6 = M['1706'] || {};
+  const fee = _pf.cfg.fee, vu = pfVu(ym);
+  const cnt = { inet: (w2.inet || 0) + (w6.inet || 0), tv: (w2.tv || 0) + (w6.tv || 0), usim: (m2.cnt || 0) + (m6.cnt || 0) };
+  const feeAmt = { inet: cnt.inet * fee.inet * PF_MONTHS, tv: cnt.tv * fee.tv * PF_MONTHS, usim: cnt.usim * fee.usim * PF_MONTHS };
+  const sp = w6.speed || {}, tf = w6.tvFinal || {};
+  const vc = { g500: (sp['500M'] || 0) + (sp['1G'] || 0), std: (tf.std || 0) + (tf.all || 0), all: tf.all || 0 };
+  const vuAmt = { g500: vc.g500 * vu.g500, std: vc.std * vu.std, all: vc.all * vu.all }, vuSum = vuAmt.g500 + vuAmt.std + vuAmt.all;
+  const wUp = (w2.up || 0) + (w6.up || 0), wAll = (w2.all || 0) + (w6.all || 0), wDir = ((w2.dirUp || 0) - (w2.dirAll || 0)) + ((w6.dirUp || 0) - (w6.dirAll || 0));
+  const mUp = (m2.up || 0) + (m6.up || 0), mAll = (m2.all || 0) + (m6.all || 0), mDir = ((m2.dirUp || 0) - (m2.dirAll || 0)) + ((m6.dirUp || 0) - (m6.dirAll || 0));
+  const grCnt = ((m6.grp || {})['동판'] || 0) + ((m6.grp || {})['가족동판'] || 0), gr = grCnt * PF_GR_UNIT;
+  const wireMargin = wUp - wAll - wDir - vuSum, usimMargin = mUp - mAll - mDir - gr;
+  const total = feeAmt.inet + feeAmt.tv + feeAmt.usim + wireMargin + usimMargin + gr + vuSum;
+  return { cnt, fee, feeAmt, vu, vc, vuAmt, vuSum, wUp, wAll, wDir, mUp, mAll, mDir, grCnt, gr, wireMargin, usimMargin, total, w2, w6, m2, m6 };
+}
+function pfRender() {
+  const el = document.getElementById('pf-body'); if (!el) return;
+  if (!_pf.months.length) { el.innerHTML = '<div class="pf-card">아직 수집된 수익현황이 없습니다. 티키 연결관리가 워크라인 정산을 10분마다 올립니다(운영시간·워크라인 로그인 상태).</div>'; return; }
+  const ym = _pf.ym, d = _pf.data[ym], c = pfCalc(d, ym), mon = +ym.slice(5, 7);
+  const saved = d.savedAt ? d.savedAt.replace('T', ' ').slice(5, 16) : '';
+  const warn = [], un = (c.w6.upsellUnmatched || 0) + (c.w2.upsellUnmatched || 0), be = (c.m2.bothErr || 0) + (c.m6.bothErr || 0);
+  if (un) warn.push(`업셀링 ${un}줄이 같은 달 TV와 짝이 안 맞아 TV 최종 상품에 반영되지 않았습니다.`);
+  if (be) warn.push(`무선 ${be}줄에 약정과 동판수수료가 둘 다 들어 있습니다(입력 오류 의심).`);
+  const man = v => (v / 10000).toLocaleString('ko-KR');
+  const tf = c.w6.tvFinal || {}, sp = c.w6.speed || {};
+  el.innerHTML = `
+  <div class="pf-card"><div class="pf-top">
+    <select onchange="pfPick(this.value)">${_pf.months.map(m => `<option value="${m}" ${m === ym ? 'selected' : ''}>${m.slice(0, 4)}년 ${+m.slice(5, 7)}월</option>`).join('')}</select>
+    <div class="pf-in">
+      <span style="font-weight:700;color:var(--text)">수수료 기준금액</span>
+      <label>인터넷 <input value="${pfC(c.fee.inet)}" onchange="pfSetFee('inet',this.value)"></label>
+      <label>TV <input value="${pfC(c.fee.tv)}" onchange="pfSetFee('tv',this.value)"></label>
+      <label>유심 <input value="${pfC(c.fee.usim)}" onchange="pfSetFee('usim',this.value)"></label>
+    </div>
+    <span class="pf-meta">${d.from} ~ ${d.to} 개통 · ${saved} 수집</span>
+  </div>
+  <div class="pf-in" style="margin-top:10px">
+    <span style="font-weight:700;color:var(--text)">${mon}월 벨류업 건당</span>
+    <label>500M 이상 <input value="${pfC(c.vu.g500)}" onchange="pfSetVu('g500',this.value)"></label>
+    <label>스탠다드 이상 <input value="${pfC(c.vu.std)}" onchange="pfSetVu('std',this.value)"></label>
+    <label>ALL 이상 <input value="${pfC(c.vu.all)}" onchange="pfSetVu('all',this.value)"></label>
+  </div></div>
+  ${warn.length ? `<div class="pf-warn">${warn.join('<br>')}</div>` : ''}
+  <div class="pf-card"><div class="pf-h">SKT ${mon}월 상품별 판매 및 수익 현황 <small>VAT별도 · 기기 제외</small></div>
+  <div class="pf-scroll"><table class="pf">
+    <tr><th style="width:36%">상품</th><th>인터넷</th><th>TV</th><th>유심</th></tr>
+    <tr><td class="l">실적</td><td>${pfC(c.cnt.inet)}</td><td>${pfC(c.cnt.tv)}</td><td>${pfC(c.cnt.usim)}</td></tr>
+    <tr><td class="l">수수료 기준금액</td><td>${pfC(c.fee.inet)}</td><td>${pfC(c.fee.tv)}</td><td>${pfC(c.fee.usim)}</td></tr>
+    <tr><td class="l">수수료수익</td>${pfTd(c.feeAmt.inet)}${pfTd(c.feeAmt.tv)}${pfTd(c.feeAmt.usim)}</tr>
+    <tr><td class="l">판매마진</td><td colspan="2" class="${c.wireMargin < 0 ? 'neg' : ''}">${pfF(c.wireMargin)}</td>${pfTd(c.usimMargin)}</tr>
+    <tr class="gr"><td class="l">UIT GR (${pfC(PF_GR_UNIT)} × ${pfC(c.grCnt)}건)</td><td colspan="3">${pfF(c.gr)}</td></tr>
+    <tr class="vu"><td class="l">벨류업 500M 이상 ${man(c.vu.g500)}만 ${pfC(c.vc.g500)}건</td><td colspan="3">${pfF(c.vuAmt.g500)}</td></tr>
+    <tr class="vu"><td class="l">벨류업 스탠다드 이상 ${man(c.vu.std)}만 ${pfC(c.vc.std)}건</td><td colspan="3">${pfF(c.vuAmt.std)}</td></tr>
+    <tr class="vu"><td class="l">벨류업 ALL ${man(c.vu.all)}만 ${pfC(c.vc.all)}건</td><td colspan="3">${pfF(c.vuAmt.all)}</td></tr>
+    <tr class="tot"><td class="l">예상수익 총액</td><td colspan="3" class="${c.total < 0 ? 'neg' : ''}">${pfF(c.total)}</td></tr>
+  </table></div>
+  <div class="pf-note">수수료수익 = 실적 × 기준금액 × ${PF_MONTHS}개월 · 실적은 1702·1706 합 · 벨류업·UIT 그레이드는 1706만<br>판매마진 = 상부 − 전체 − 직영 2팀(시흥·천안) 마진 − 벨류업(유선) / UIT 그레이드(유심) · 민원및추가지급·업셀링 제외, 인센 포함</div></div>
+    <div class="pf-card"><div class="pf-h">판매마진 근거</div><table class="pf">
+      <tr><th></th><th>유선</th><th>유심</th></tr>
+      <tr><td class="l">상부 합계</td>${pfTd(c.wUp)}${pfTd(c.mUp)}</tr>
+      <tr><td class="l">전체 합계</td>${pfTd(c.wAll)}${pfTd(c.mAll)}</tr>
+      <tr><td class="l">상부 − 전체</td>${pfTd(c.wUp - c.wAll)}${pfTd(c.mUp - c.mAll)}</tr>
+      <tr><td class="l">빼기: 직영 2팀 마진</td>${pfTd(c.wDir)}${pfTd(c.mDir)}</tr>
+      <tr><td class="l">빼기: 벨류업 / UIT GR</td>${pfTd(c.vuSum)}${pfTd(c.gr)}</tr>
+      <tr class="tot"><td class="l">판매마진</td>${pfTd(c.wireMargin)}${pfTd(c.usimMargin)}</tr>
+    </table></div>
+  <div class="pf-grid">
+    <div class="pf-card"><div class="pf-h">인터넷 속도별 <small>1706 (1702 ${pfC(c.w2.inet || 0)}건 별도)</small></div><table class="pf">
+      <tr><th>속도</th><th>수량</th></tr>
+      ${['500M', '1G', '100M'].map(k => `<tr><td class="l">${k}</td><td>${pfC(sp[k] || 0)}</td></tr>`).join('')}
+      <tr class="tot"><td class="l">합계</td><td>${pfC(c.w6.inet || 0)}</td></tr></table></div>
+    <div class="pf-card"><div class="pf-h">TV 최종 <small>1706 · 업셀링 ${pfC(c.w6.upsell || 0)}줄 반영</small></div><table class="pf">
+      <tr><th>구분</th><th>수량</th></tr>
+      <tr><td class="l">스탠다드류</td><td>${pfC(tf.std || 0)}</td></tr><tr><td class="l">All+맥스류</td><td>${pfC(tf.all || 0)}</td></tr><tr><td class="l">이코노미류</td><td>${pfC(tf.eco || 0)}</td></tr>
+      <tr class="tot"><td class="l">합계</td><td>${pfC(c.w6.tv || 0)}</td></tr></table></div>
+    <div class="pf-card"><div class="pf-h">유심 구분</div><table class="pf">
+      <tr><th></th><th>1702</th><th>1706</th></tr>
+      ${['단판', '동판', '가족동판'].map(k => `<tr><td class="l">${k}</td><td>${pfC((c.m2.grp || {})[k] || 0)}</td><td>${pfC((c.m6.grp || {})[k] || 0)}</td></tr>`).join('')}
+      <tr class="tot"><td class="l">합계</td><td>${pfC(c.m2.cnt || 0)}</td><td>${pfC(c.m6.cnt || 0)}</td></tr></table></div>
+  </div>`;
+}
+
 // ===== 최상위 탭 전환 =====
 // 온라인 공유 저장소 (woozoo-apps) — 벨류업 데이터를 기기 간 공유
 window._vuShare = supabase.createClient('https://qpexfvwrlwkpjyihlnwz.supabase.co', 'sb_publishable_jHI1F0XBC9cYC1d43-MoBA_JFqLQdky');
@@ -1965,6 +2102,8 @@ function showMainTab(t) {
   document.getElementById('main-summary').style.display = t === 'summary' ? '' : 'none';
   document.getElementById('main-sales').style.display = sales ? '' : 'none';
   document.getElementById('main-stock').style.display = t === 'stock' ? '' : 'none';
+  document.getElementById('main-profit').style.display = t === 'profit' ? '' : 'none';
+  document.getElementById('ttab-profit').classList.toggle('on', t === 'profit');
   document.getElementById('ttab-summary').classList.toggle('on', t === 'summary');
   document.getElementById('ttab-sales').classList.toggle('on', t === 'sales');
   document.getElementById('ttab-uit').classList.toggle('on', t === 'uit');
@@ -1975,13 +2114,15 @@ function showMainTab(t) {
     summary: ['요약', '핵심 수치 한눈에'],
     sales:   ['T유선 <span>벨류업</span> 데이터', '진행상태 · 요금제 · 판매처 현황을 한눈에'],
     uit:     ['UIT', '유심 개통 현황'],
-    stock:   ['재고현황', '모델별 재고금액 추이']
+    stock:   ['재고현황', '모델별 재고금액 추이'],
+    profit:  ['SKT <span>수익현황</span>', '워크라인 정산 기준 · 상품별 판매 및 예상수익']
   };
   const tt = TITLES[t] || TITLES.sales;
   const elT = document.getElementById('sa-title'), elS = document.getElementById('sa-sub');
   if (elT) elT.innerHTML = tt[0];
   if (elS) elS.textContent = tt[1];
-  document.getElementById('vu-goal-banner').style.display = (t === 'uit' || t === 'summary') ? 'none' : '';
+  document.getElementById('vu-goal-banner').style.display = (t === 'uit' || t === 'summary' || t === 'profit') ? 'none' : '';
+  if (t === 'profit') pfLoad();
   if ((t === 'stock' || t === 'summary') && !_svLoaded) { _svLoaded = true; svLoad(); }
   // 재고 탭 진입 시 현재 폭으로 재그리기(숨김 상태서 그려졌으면 hover 사각지대 생김)
   if (t === 'stock' && window._svRedraw) requestAnimationFrame(() => window._svRedraw());
