@@ -410,7 +410,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       <button class="on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> T벨류업</button>
       <button id="ttab-uit" onclick="showMainTab('uit')"><i data-lucide="smartphone" style="width:14px;height:14px"></i> UIT</button>
       <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 재고현황</button>
-      <button id="ttab-profit" onclick="showMainTab('profit')"><i data-lucide="receipt" style="width:14px;height:14px"></i> 수익현황</button>
+      <button id="ttab-profit" hidden onclick="showMainTab('profit')"><i data-lucide="receipt" style="width:14px;height:14px"></i> 수익현황</button>
     </div>
     <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" id="vu-pull-btn" onclick="vuPullNow(this)" title="지금 tkey 최신 데이터 불러오기"><i data-lucide="refresh-cw"></i></button><button class="gear-btn" onclick="openMargin()" title="협력점별 정산마진" style="display:none"><i data-lucide="calculator"></i></button><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
   </div>
@@ -2098,6 +2098,7 @@ function sumMiniChart(pts, eok) {
 
 let _svLoaded = false;
 function showMainTab(t) {
+  if (t === 'profit') t = 'sales';   // 수익현황 숨김(2026-11-09, 코드는 보관)
   try { localStorage.setItem('vu_tab', t); } catch (e) {}
   const sales = t === 'sales' || t === 'uit';
   document.getElementById('main-summary').style.display = t === 'summary' ? '' : 'none';
