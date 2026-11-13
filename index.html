@@ -2181,8 +2181,20 @@ const SV_NAMES = {
   S938_256:'갤럭시 S25 울트라 256G', S938_512:'갤럭시 S25 울트라 512G', S938_1T:'갤럭시 S25 울트라 1T',
   S942_256:'갤럭시 S26 256G', S942_512:'갤럭시 S26 512G', S947_256:'갤럭시 S26+ 256G', S947_512:'갤럭시 S26+ 512G',
   S948_256:'갤럭시 S26 울트라 256G', S948_512:'갤럭시 S26 울트라 512G', S948_1T:'갤럭시 S26 울트라 1T',
-  USIM:'유심', '갤럭시_퀀텀7_128G':'갤럭시 퀀텀7 128G'
+  USIM:'유심', '갤럭시_퀀텀7_128G':'갤럭시 퀀텀7 128G',
+  // 2026-11-13 추가(모델 알림판 이름 기준)
+  A576:'갤럭시 퀀텀7 128G', S942_256G_NEW:'갤럭시 S26 256G (재출시)', S942_512G_NEW:'갤럭시 S26 512G (재출시)',
+  IP17_256G_NEW:'iPhone 17 256G (재출시)', IP17_512G_NEW:'iPhone 17 512G (재출시)',
+  IP18P_256G:'iPhone 18 Pro 256G', IP18P_512G:'iPhone 18 Pro 512G', IP18P_1T:'iPhone 18 Pro 1T', IP18P_2T:'iPhone 18 Pro 2T',
+  IP18PM_256G:'iPhone 18 Pro Max 256G', IP18PM_512G:'iPhone 18 Pro Max 512G', IP18PM_1T:'iPhone 18 Pro Max 1T', IP18PM_2T:'iPhone 18 Pro Max 2T',
+  IPDuo_256G:'iPhone Duo 256G', IPDuo_512G:'iPhone Duo 512G', IPDuo_1T:'iPhone Duo 1T', IPDuo_2T:'iPhone Duo 2T'
 };
+
+// 코드 → 한글명. 재고 코드는 용량 뒤에 G가 붙어 있을 수 있어(F766_256G) 붙은 것/뗀 것 모두 찾음 (2026-11-13)
+function svKor(code) {
+  const c = String(code || '');
+  return SV_NAMES[c] || SV_NAMES[c.replace(/G$/i, '')] || SV_NAMES[c.replace(/TB$/i, 'T')] || SV_NAMES[c.replace(/T$/i, 'TB')] || '';
+}
 
 // 모델별 재고 정렬 — 기본(모델관리 순서) / 수량 / 재고금액
 window._svSort = 'base';
@@ -2263,7 +2275,7 @@ const svLoad = (() => {
       const byModel = {};
       incRows.forEach(r => { const k = r.model || '(미지정)'; byModel[k] = (byModel[k] || 0) + 1; });
       const baseRows = Object.entries(byModel)
-        .map(([m, q]) => { const price = priceMap[m] || 0, dq = dqMap[m] || 0; return { m, name: SV_NAMES[m] || m, q, price, amt: q * price, dq, damt: dq * price }; })
+        .map(([m, q]) => { const price = priceMap[m] || 0, dq = dqMap[m] || 0; return { m, name: m, kor: svKor(m), q, price, amt: q * price, dq, damt: dq * price }; })
         .sort((a, b) => (ordMap[a.m] ?? 999) - (ordMap[b.m] ?? 999) || b.amt - a.amt);
       const el = $v('sv-models');
       if (!el) return;
@@ -2295,7 +2307,7 @@ const svLoad = (() => {
               <td style="padding:10px 8px;border-bottom:2px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;${dmode ? '' : 'color:var(--primary)'};white-space:nowrap">${dmode ? svDa(totDamt) : fmtN(totAmt) + '원'}</td>
             </tr>
             ${rows.map(r => `<tr>
-            <td style="${TDm};font-weight:700;font-size:12.5px">${escM(r.name)}</td>
+            <td style="${TDm};font-weight:700;font-size:12.5px;line-height:1.3">${r.kor ? `${escM(r.kor)}<div style="font-size:11px;font-weight:500;color:var(--text-hint)">${escM(r.name)}</div>` : escM(r.name)}</td>
             <td style="${TDm};text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${dmode ? svDq(r.dq) : r.q.toLocaleString() + '대'}</td>
             <td style="${TDm};text-align:right;font-variant-numeric:tabular-nums;font-weight:700;${dmode ? '' : 'color:var(--primary)'}">${dmode ? svDa(r.damt) : (r.amt ? fmtN(r.amt) + '원' : '-')}</td>
           </tr>`).join('')}</tbody>`;
@@ -2307,7 +2319,7 @@ const svLoad = (() => {
       const dqTxt = n => (Number(n) > 0 ? '+' : '') + (Number(n) || 0).toLocaleString();
       const daTxt = n => (Number(n) > 0 ? '+' : '') + (Number(n) || 0).toLocaleString() + '원';
       const totDq = window._svDeltaTotal || 0, totDamt = baseRows.reduce((a, r) => a + (r.damt || 0), 0);
-      const wModel = Math.max(twf('모델', '600'), twf(`합계 · ${rows.length}개 모델`, '800'), ...rows.map(r => twf(r.name, '700')));
+      const wModel = Math.max(twf('모델', '600'), twf(`합계 · ${rows.length}개 모델`, '800'), ...rows.map(r => twf(r.kor ? r.kor + '  ' + r.name : r.name, '700')));
       const wPrice = Math.max(twf('단가', '600'), ...rows.map(r => twf(r.price ? fmtN(r.price) + '원' : '단가없음', '400')));
       const wQty = Math.max(twf('수량', '600'), twf(incRows.length.toLocaleString() + '대', '800'), ...rows.map(r => twf(r.q.toLocaleString() + '대', '600')));
       const wDq = Math.max(twf('전일대비', '600'), twf(dqTxt(totDq), '700'), ...rows.map(r => twf(dqTxt(r.dq), '700')));
@@ -2339,7 +2351,7 @@ const svLoad = (() => {
           <td style="padding:11px 14px;border-bottom:2px solid var(--border)"></td>
         </tr>
         ${rows.map(r => `<tr>
-          <td style="${TD};font-weight:700">${escM(r.name)}</td>
+          <td style="${TD};font-weight:700">${r.kor ? `${escM(r.kor)} <span style="font-size:12px;font-weight:500;color:var(--text-hint)">${escM(r.name)}</span>` : escM(r.name)}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;${r.price ? 'color:var(--text-sub)' : 'color:var(--text-hint)'}">${r.price ? fmtN(r.price) + '원' : '단가없음'}</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums;font-weight:600">${r.q.toLocaleString()}대</td>
           <td style="${TD};text-align:right;font-variant-numeric:tabular-nums">${svDq(r.dq)}</td>
