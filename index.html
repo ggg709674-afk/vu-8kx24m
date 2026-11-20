@@ -363,6 +363,31 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
 }
 
 [hidden] { display:none !important; }
+/* ── 업체별 ── */
+#main-vend .wv-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px 18px; margin-bottom:14px; }
+#main-vend .wv-top { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+#main-vend .wv-top select { height:32px; border:1px solid var(--border); border-radius:8px; padding:0 10px; font:inherit; font-size:13px; background:var(--white); color:var(--text); }
+#main-vend .wv-seg { display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+#main-vend .wv-seg button { border:0; background:var(--white); padding:0 14px; height:32px; font:inherit; font-size:13px; font-weight:600; color:var(--text-sub); cursor:pointer; }
+#main-vend .wv-seg button.on { background:var(--primary); color:#fff; }
+#main-vend .wv-meta { font-size:12px; color:var(--text-hint); margin-left:auto; }
+#main-vend .wv-scroll { overflow-x:auto; }
+#main-vend table.wv { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+#main-vend table.wv th, #main-vend table.wv td { border-bottom:1px solid var(--border-light); padding:8px 10px; text-align:right; }
+#main-vend table.wv thead th { background:#FAFBFC; color:var(--text-sub); font-weight:700; font-size:12px; border-bottom:1px solid var(--border); }
+#main-vend table.wv thead tr.g th { text-align:center; color:var(--text); font-size:12.5px; }
+#main-vend table.wv th.l, #main-vend table.wv td.l { text-align:left; }
+#main-vend table.wv td.l { font-weight:600; color:var(--text); }
+#main-vend table.wv td.sum { font-weight:800; }
+#main-vend table.wv .sep { border-left:1px solid var(--border); }
+#main-vend table.wv td.z { color:var(--text-hint); }
+#main-vend table.wv td.ok { color:#0E9F6E; font-weight:700; }
+#main-vend table.wv td.ng { color:var(--red); font-weight:700; }
+#main-vend table.wv td.na { color:var(--text-hint); }
+#main-vend table.wv tr.tot td { background:var(--primary-light); font-weight:800; }
+#main-vend table.wv tbody tr:hover td { background:#F7F9FC; }
+#main-vend table.wv tbody tr.tot:hover td { background:var(--primary-light); }
+#main-vend .wv-note { font-size:12px; color:var(--text-hint); margin-top:10px; line-height:1.6; white-space:normal; }
 /* ── 수익현황 ── */
 #main-profit .pf-card { background:var(--white); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px 20px; margin-bottom:14px; }
 #main-profit .pf-top { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -411,6 +436,7 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
       <button class="on" id="ttab-sales" onclick="showMainTab('sales')"><i data-lucide="wifi" style="width:14px;height:14px"></i> T벨류업</button>
       <button id="ttab-uit" onclick="showMainTab('uit')"><i data-lucide="smartphone" style="width:14px;height:14px"></i> UIT</button>
       <button id="ttab-stock" onclick="showMainTab('stock')"><i data-lucide="package" style="width:14px;height:14px"></i> 재고현황</button>
+      <button id="ttab-vend" onclick="showMainTab('vend')"><i data-lucide="building-2" style="width:14px;height:14px"></i> 업체별</button>
       <button id="ttab-profit" hidden onclick="showMainTab('profit')"><i data-lucide="receipt" style="width:14px;height:14px"></i> 수익현황</button>
     </div>
     <div class="bar-right"><span>SKT · 우주커넥트 현황판</span><button class="gear-btn" id="vu-pull-btn" onclick="vuPullNow(this)" title="지금 tkey 최신 데이터 불러오기"><i data-lucide="refresh-cw"></i></button><button class="gear-btn" onclick="openMargin()" title="협력점별 정산마진" style="display:none"><i data-lucide="calculator"></i></button><button class="gear-btn" onclick="openSettings()" title="엑셀 업로드 · 데이터 설정"><i data-lucide="settings"></i></button><button class="gear-btn" onclick="vuLogout()" title="로그아웃 — 다시 비밀번호 입력"><i data-lucide="log-out"></i></button></div>
@@ -625,6 +651,8 @@ body { font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif
   <!-- ── 재고현황 ── -->
   <!-- ── 수익현황 (워크라인 정산 실시간, 2026-11-08) ── -->
   <div id="main-profit" style="display:none"><div id="pf-body" style="max-width:980px;margin:0 auto"></div></div>
+  <!-- ── 업체별 (워크라인 유선 업체별 유효접수·개통, 2026-11-20) ── -->
+  <div id="main-vend" style="display:none"><div id="wv-body" style="max-width:1180px;margin:0 auto"></div></div>
 
   <div id="main-stock" style="display:none">
     <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px">
@@ -1825,6 +1853,69 @@ renderUsim();
 lucide.createIcons();
 </script>
 <script>
+// ===== 업체별 (티키 연결관리가 워크라인 유선 업체별 건수를 vu_shared 'wirevend_YYYY-MM' 에 1시간마다 올림, 2026-11-20) =====
+// 데이터: { rcpt|open: { 업체: { i:[광랜,500M,1G], t:[이코노미류,스탠다드류,All류] } } } — 접수=유효접수(취소·반송 제외), 개통=개통완료
+let _wv = { months: [], ym: null, data: {}, mode: 'open', sort: 'i' };
+try { const m = localStorage.getItem('vu_wv_mode'); if (m) _wv.mode = m; } catch (e) {}
+async function wvLoad() {
+  const sb = window._vuShare; if (!sb) return;
+  try {
+    const { data: rows } = await sb.from('vu_shared').select('id,data').like('id', 'wirevend_%');
+    (rows || []).forEach(r => { if (r.data && r.data.month) _wv.data[r.data.month] = r.data; });
+  } catch (e) {}
+  _wv.months = Object.keys(_wv.data).sort().reverse();
+  if (!_wv.ym || !_wv.data[_wv.ym]) _wv.ym = _wv.months[0];
+  wvRender();
+}
+function wvSet(k, v) { _wv[k] = v; if (k === 'mode') { try { localStorage.setItem('vu_wv_mode', v); } catch (e) {} } wvRender(); }
+function wvRender() {
+  const el = document.getElementById('wv-body'); if (!el) return;
+  const D = _wv.data[_wv.ym];
+  if (!D) { el.innerHTML = '<div class="wv-card">아직 수집된 업체별 자료가 없습니다. 티키 연결관리가 워크라인 로그인 상태에서 1시간마다 올립니다.</div>'; return; }
+  const G = window._vuGoals || {}, g500 = G.유선 ?? 85, gStd = G.tv1 ?? 90, gAll = G.tv2 ?? 30;
+  const src = (_wv.mode === 'rcpt' ? D.rcpt : D.open) || {};
+  const n = x => (Number(x) || 0).toLocaleString('ko-KR');
+  const sum = a => a.reduce((s, x) => s + (x || 0), 0);
+  const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let rows = Object.entries(src).map(([v, c]) => ({ v, i: c.i || [0, 0, 0], t: c.t || [0, 0, 0] }))
+    .filter(r => sum(r.i) + sum(r.t) > 0);
+  if (_wv.sort === 'name') rows.sort((a, b) => a.v.localeCompare(b.v, 'ko'));
+  else if (_wv.sort === 't') rows.sort((a, b) => (sum(b.t) - sum(a.t)) || (sum(b.i) - sum(a.i)));
+  else rows.sort((a, b) => (sum(b.i) - sum(a.i)) || (sum(b.t) - sum(a.t)));
+  const tot = { v: '합계', i: [0, 1, 2].map(k => sum(rows.map(r => r.i[k]))), t: [0, 1, 2].map(k => sum(rows.map(r => r.t[k]))) };
+  const td = (x, cls) => `<td class="${cls || ''}${x ? '' : ' z'}">${x ? n(x) : '-'}</td>`;
+  const rate = (a, b, goal) => {
+    if (!b) return '<td class="na">-</td>';
+    const p = a / b * 100; return `<td class="${p >= goal ? 'ok' : 'ng'}">${p.toFixed(1)}%</td>`;
+  };
+  const line = (r, cls) => {
+    const it = sum(r.i), tt = sum(r.t);
+    return `<tr class="${cls || ''}"><td class="l">${esc(r.v)}</td>`
+      + td(r.i[0], 'sep') + td(r.i[1]) + td(r.i[2]) + `<td class="sum">${n(it)}</td>` + rate(r.i[1] + r.i[2], it, g500)
+      + td(r.t[0], 'sep') + td(r.t[1]) + td(r.t[2]) + `<td class="sum">${n(tt)}</td>` + rate(r.t[1] + r.t[2], tt, gStd) + rate(r.t[2], tt, gAll) + '</tr>';
+  };
+  const sv = D.savedAt ? new Date(D.savedAt) : null;
+  const when = sv ? `${sv.getMonth() + 1}/${sv.getDate()} ${String(sv.getHours()).padStart(2, '0')}:${String(sv.getMinutes()).padStart(2, '0')} 기준` : '';
+  const opts = _wv.months.map(m => `<option value="${m}"${m === _wv.ym ? ' selected' : ''}>${m.slice(0, 4)}년 ${+m.slice(5)}월</option>`).join('');
+  const seg = (k, list) => '<div class="wv-seg">' + list.map(([v, lb]) => `<button class="${_wv[k] === v ? 'on' : ''}" onclick="wvSet('${k}','${v}')">${lb}</button>`).join('') + '</div>';
+  el.innerHTML = `<div class="wv-card"><div class="wv-top">
+      <select onchange="wvSet('ym',this.value)">${opts}</select>
+      ${seg('mode', [['open', '개통'], ['rcpt', '유효접수']])}
+      ${seg('sort', [['i', '인터넷순'], ['t', 'TV순'], ['name', '이름순']])}
+      <span class="wv-meta">${D.from} ~ ${D.to} · ${when}</span>
+    </div></div>
+  <div class="wv-card"><div class="wv-scroll"><table class="wv">
+    <thead>
+      <tr class="g"><th class="l" rowspan="2">업체</th><th class="sep" colspan="5">인터넷</th><th class="sep" colspan="6">TV</th></tr>
+      <tr><th class="sep">광랜</th><th>500M</th><th>1G</th><th>계</th><th>500M↑ (${g500}%)</th>
+          <th class="sep">이코노미</th><th>스탠다드</th><th>All</th><th>계</th><th>스탠다드↑ (${gStd}%)</th><th>All↑ (${gAll}%)</th></tr>
+    </thead>
+    <tbody>${line(tot, 'tot')}${rows.map(r => line(r)).join('')}</tbody>
+  </table></div>
+  <div class="wv-note">${_wv.mode === 'rcpt' ? '유효접수 = 워크라인 주문 접수일 기준, 취소완료·접수반송 제외.' : '개통 = 워크라인 전체정산 개통완료, 개통일 기준(1702·1706 합산).'}
+    스탠다드 = 스탠다드·(추단)스탠다드·넷플 포함, All = All·(추단)All·맥스 포함. 비율 색은 벨류업 목표(요약 탭 목표값) 대비 업체별 참고용입니다. 업셀링/전환(All 전환)은 반영 전 숫자라 All 비율은 실제보다 낮게 나올 수 있고, 실제 지급 판정은 대리점 전체 1706 기준입니다.</div></div>`;
+}
+
 // ===== 수익현황 (티키 연결관리가 workline 정산을 집계해 vu_shared 'profit_YYYY-MM' 에 올림, 2026-11-08) =====
 // 규칙(사용자 2026-11-08): 유선 마진 = 상부 − 전체(약정+번들−미비−기타, 인센 포함·민원및추가지급·업셀링 제외) − 직영 2팀 마진 − 벨류업(1706)
 //   유심 마진 = 상부 − 전체(줄마다 약정 또는 동판) − 직영 2팀 마진 − UIT 그레이드(1706 동판·가족동판 × 45,454). 기기는 제외. 수수료수익 = 실적 × 기준금액 × 28
@@ -2108,6 +2199,8 @@ function showMainTab(t) {
   document.getElementById('main-sales').style.display = sales ? '' : 'none';
   document.getElementById('main-stock').style.display = t === 'stock' ? '' : 'none';
   document.getElementById('main-profit').style.display = t === 'profit' ? '' : 'none';
+  document.getElementById('main-vend').style.display = t === 'vend' ? '' : 'none';
+  document.getElementById('ttab-vend').classList.toggle('on', t === 'vend');
   document.getElementById('ttab-profit').classList.toggle('on', t === 'profit');
   document.getElementById('ttab-summary').classList.toggle('on', t === 'summary');
   document.getElementById('ttab-sales').classList.toggle('on', t === 'sales');
@@ -2120,14 +2213,16 @@ function showMainTab(t) {
     sales:   ['T유선 <span>벨류업</span> 데이터', '진행상태 · 요금제 · 판매처 현황을 한눈에'],
     uit:     ['UIT', '유심 개통 현황'],
     stock:   ['재고현황', '모델별 재고금액 추이'],
-    profit:  ['SKT <span>수익현황</span>', '워크라인 정산 기준 · 상품별 판매 및 예상수익']
+    profit:  ['SKT <span>수익현황</span>', '워크라인 정산 기준 · 상품별 판매 및 예상수익'],
+    vend:    ['유선 <span>업체별</span> 현황', '워크라인 기준 · 업체별 인터넷 속도 · TV 등급 (벨류업 참고)']
   };
   const tt = TITLES[t] || TITLES.sales;
   const elT = document.getElementById('sa-title'), elS = document.getElementById('sa-sub');
   if (elT) elT.innerHTML = tt[0];
   if (elS) elS.textContent = tt[1];
-  document.getElementById('vu-goal-banner').style.display = (t === 'uit' || t === 'summary' || t === 'profit') ? 'none' : '';
+  document.getElementById('vu-goal-banner').style.display = (t === 'uit' || t === 'summary' || t === 'profit' || t === 'vend') ? 'none' : '';
   if (t === 'profit') pfLoad();
+  if (t === 'vend') wvLoad();
   if ((t === 'stock' || t === 'summary') && !_svLoaded) { _svLoaded = true; svLoad(); }
   // 재고 탭 진입 시 현재 폭으로 재그리기(숨김 상태서 그려졌으면 hover 사각지대 생김)
   if (t === 'stock' && window._svRedraw) requestAnimationFrame(() => window._svRedraw());
