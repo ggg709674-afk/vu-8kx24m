@@ -1942,11 +1942,10 @@ lucide.createIcons();
 // ===== 업체별 (티키 연결관리가 워크라인 유선 업체별 건수를 vu_shared 'wirevend_YYYY-MM' 에 1시간마다 올림, 2026-11-20) =====
 // 데이터: { rcpt|open: { 업체: { i:[광랜,500M,1G], t:[이코노미류,스탠다드류,All류] } } } — 접수=유효접수(취소·반송 제외), 개통=개통완료
 let _wv = { months: [], ym: null, data: {}, mode: 'open', sk: 'isum', sd: -1 };
-try { const m = localStorage.getItem('vu_wv_mode'); if (m) _wv.mode = m; const o = JSON.parse(localStorage.getItem('vu_wv_sort') || 'null'); if (o) { _wv.sk = o.k; _wv.sd = o.d; } } catch (e) {}
+try { const m = localStorage.getItem('vu_wv_mode'); if (m) _wv.mode = m; localStorage.removeItem('vu_wv_sort'); } catch (e) {}   // 정렬은 기억 안 함 — 새로고침하면 인터넷 계(수량) 많은 순
 // 칼럼 머리글 클릭 정렬 — 같은 칼럼 다시 누르면 오름/내림 전환, 처음 누르면 큰 값부터(업체는 가나다순)
 function wvSort(k) {
   if (_wv.sk === k) _wv.sd = -_wv.sd; else { _wv.sk = k; _wv.sd = k === 'name' ? 1 : -1; }
-  try { localStorage.setItem('vu_wv_sort', JSON.stringify({ k: _wv.sk, d: _wv.sd })); } catch (e) {}
   wvRender();
 }
 async function wvLoad() {
