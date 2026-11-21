@@ -493,6 +493,10 @@ body { font-size:13px; }
 #vu-lock input { background:#fff !important; border:1px solid var(--border) !important; color:var(--text) !important; }
 #vu-lock button { background:var(--primary) !important; }
 #vu-lock-err { color:var(--red) !important; }
+.sum-seg { display:inline-flex; background:#fff; border:1px solid var(--border); border-radius:9px; padding:3px; gap:2px; max-width:100%; overflow-x:auto; }
+.sum-seg button { font:inherit; font-size:13px; font-weight:600; color:var(--text-sub); background:none; border:0; border-radius:7px; padding:7px 16px; cursor:pointer; white-space:nowrap; }
+.sum-seg button:hover { color:var(--text); }
+.sum-seg button.on { background:var(--primary); color:#fff; font-weight:700; }
 </style>
 </head>
 <body>
@@ -2135,6 +2139,7 @@ function pfRender() {
 window._vuShare = supabase.createClient('https://qpexfvwrlwkpjyihlnwz.supabase.co', 'sb_publishable_jHI1F0XBC9cYC1d43-MoBA_JFqLQdky');
 // ── 요약 대시보드 렌더 ──
 if (window._sumSub === undefined) { try { window._sumSub = localStorage.getItem('vu_sumsub') || '개통'; } catch (e) { window._sumSub = '개통'; } }   // '개통' | '접수'
+function sumPick(per, sub) { window._sumPeriod = per; window._sumSub = sub; try { localStorage.setItem('vu_sumperiod', per); localStorage.setItem('vu_sumsub', sub); } catch (e) {} window.renderSummary(); }
 function sumSub(k) { window._sumSub = k; try { localStorage.setItem('vu_sumsub', k); } catch (e) {} window.renderSummary(); }
 if (window._sumPeriod === undefined) { try { window._sumPeriod = localStorage.getItem('vu_sumperiod') || 'month'; } catch (e) { window._sumPeriod = 'month'; } }   // 'today' | 'month' — 새로고침 유지
 function sumPeriod(k) { window._sumPeriod = k; try { localStorage.setItem('vu_sumperiod', k); } catch (e) {} window.renderSummary(); }
@@ -2220,14 +2225,12 @@ window.renderSummary = function renderSummary() {
   html += `<div style="margin-bottom:8px"><div style="font-size:15px;font-weight:800;margin:0 0 10px 2px">재고금액 추이</div>
     <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:14px 16px">${sumMiniChart(pts, eok)}</div></div>`;
   // ── 기간(오늘/이번달) + 기준(개통/접수) 서브탭 (맨 위) ──
-  const perBtn = (k, label) => { const on = (window._sumPeriod || 'month') === k; return `<button onclick="sumPeriod('${k}')" style="padding:7px 18px;border-radius:999px;border:1.5px solid ${on ? 'var(--primary)' : 'var(--border)'};background:${on ? 'var(--primary)' : 'var(--white)'};color:${on ? '#fff' : 'var(--text-sub)'};font-size:12.5px;font-weight:800;cursor:pointer">${label}</button>`; };
-  const subBtn = (k, label) => { const on = window._sumSub === k; return `<button onclick="sumSub('${k}')" style="padding:8px 16px;border-radius:10px;border:1.5px solid ${on ? 'var(--primary)' : 'var(--border)'};background:${on ? 'var(--primary)' : 'var(--white)'};color:${on ? '#fff' : 'var(--text-sub)'};font-size:13.5px;font-weight:800;cursor:pointer">${label}</button>`; };
-  // 한 줄 가로 배치: [오늘][이번달] | [개통기준][접수기준] — .sum-ctl 이 스크롤 시 상단바 아래 고정
-  const ctlBar = `<div class="sum-ctl">
-      <div class="grp">${perBtn('today', '오늘')}${perBtn('month', '이번달')}</div>
-      <div class="sep"></div>
-      <div class="grp">${subBtn('개통', '개통기준')}${subBtn('접수', '접수기준')}</div>
-    </div>`;
+  // 기간+기준 한 번에: [오늘 개통][오늘 접수][이번달 개통][이번달 접수] — .sum-ctl 이 스크롤 시 상단바 아래 고정
+  const pickBtn = (per, sub, label) => { const on = (window._sumPeriod || 'month') === per && window._sumSub === sub;
+    return `<button onclick="sumPick('${per}','${sub}')" class="${on ? 'on' : ''}">${label}</button>`; };
+  const ctlBar = `<div class="sum-ctl"><div class="sum-seg">
+      ${pickBtn('today', '개통', '오늘 개통')}${pickBtn('today', '접수', '오늘 접수')}${pickBtn('month', '개통', '이번달 개통')}${pickBtn('month', '접수', '이번달 접수')}
+    </div></div>`;
   let content;
   if (window._sumPeriod === 'today') {
     // ── 오늘 값 계산 (목표 없이 수량만, "오늘 / 이번달") ──
