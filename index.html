@@ -2341,7 +2341,7 @@ const svLoad = (() => {
   const $v = id => document.getElementById(id);
   const fmtN = n => (Number(n) || 0).toLocaleString('ko-KR');
   const eok = v => { const a = Math.abs(v); if (a >= 1e8) { let s = (v / 1e8).toFixed(a >= 1e9 ? 1 : 2).replace(/\.?0+$/, ''); return s + '억'; } if (a >= 1e4) return Math.round(v / 1e4).toLocaleString() + '만'; return String(Math.round(v)); };
-  const INC = ['재고', '출고중', '숨김', '예약', '훼손'], OUT = ['개통', '이관출고'];
+  const INC = ['재고', '택배가능', '출고중', '숨김', '예약', '훼손'], OUT = ['개통', '이관출고'];   // 재고금액 기준 — 우주커넥트 현황표·스냅샷과 동일 (2026-11-21 택배가능 포함)
   const ymdF = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const nice = raw => { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; };
   let _pts = [];
