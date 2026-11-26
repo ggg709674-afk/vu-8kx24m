@@ -1583,8 +1583,9 @@ function computeGoals(fileType, planMap, mode) {
       else if (name.includes('광랜'))  agg.gwang += n;
       else if (name.includes('기가'))  agg.giga += n;
     } else {
-      if (name.includes('스탠다드'))       agg.standard += n;
-      else if (/all/i.test(name))         agg.all += n;
+      // ALL 단어가 들어가면 무조건 ALL(ALL 넷플릭스 등, 사용자 2026-11-26) → 그다음 스탠다드
+      if (/all|맥스/i.test(name))          agg.all += n;
+      else if (name.includes('스탠다드'))  agg.standard += n;
       else                                 agg.etc += n;
     }
   });
